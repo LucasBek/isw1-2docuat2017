@@ -82,7 +82,7 @@ suite('IdiomTest',function() {
         }, 100)
     });
 
-    function assertErrorsWhenExecuting(aCollaboration, exceptionType, errorMessage) {
+    function assertErrorsWhenExecutingAndCustomerBookStaysEmpty(aCollaboration, exceptionType, errorMessage) {
         try {
             aCollaboration();
             fail(); 
@@ -98,13 +98,13 @@ suite('IdiomTest',function() {
     }
 
     test('CanNotAddACustomerWithEmptyName', function () {
-        assertErrorsWhenExecuting(function () {
+        assertErrorsWhenExecutingAndCustomerBookStaysEmpty(function () {
             customerBook.addCustomerNamed("")
         }, Error, CustomerBook.prototype.CUSTOMER_NAME_EMPTY);
     });
 
     test('CanNotRemoveNotAddedCustomers', function () {
-       assertErrorsWhenExecuting(function() {
+       assertErrorsWhenExecutingAndCustomerBookStaysEmpty(function() {
             customerBook.removeCustomerNamed("John Lennon");
        }, IllegalArgumentException, CustomerBook.prototype.INVALID_CUSTOMER_NAME);
     });
