@@ -60,15 +60,15 @@ suite('IdiomTest',function() {
         customerBook = new CustomerBook();
     });
 
-    function assertCollaborationTakesLessThan(aCollaboration, milliseconds) {
+    function assertCustomerBookOperationTakesLessThan(aCustomerBookOperation, milliseconds) {
         var millisecondsBeforeRunning = new Date().getTime();
-            aCollaboration();
+            aCustomerBookOperation();
         var millisecondsAfterRunning = new Date().getTime();
         assert((millisecondsAfterRunning - millisecondsBeforeRunning) < milliseconds);
     }
 
     test('AddingCustomerShouldNotTakeMoreThan50Milliseconds', function () {
-        assertCollaborationTakesLessThan(function () {
+        assertCustomerBookOperationTakesLessThan(function () {
             customerBook.addCustomerNamed("John Lennon");
         }, 50);
     });
@@ -77,14 +77,14 @@ suite('IdiomTest',function() {
         var paulMcCartney = "Paul McCartney";
         customerBook.addCustomerNamed(paulMcCartney);
 
-        assertCollaborationTakesLessThan(function() {
+        assertCustomerBookOperationTakesLessThan(function() {
             customerBook.removeCustomerNamed(paulMcCartney);
         }, 100)
     });
 
-    function assertErrorsWhenExecutingAndCustomerBookStaysEmpty(aCollaboration, exceptionType, errorMessage) {
+    function assertErrorsWhenOperatingWithCustomerBookWhichRemainsEmpty(aCustomerBookOperation, exceptionType, errorMessage) {
         try {
-            aCollaboration();
+            aCustomerBookOperation();
             fail(); 
         } catch (e) {
             if (e instanceof exceptionType) {
@@ -98,13 +98,13 @@ suite('IdiomTest',function() {
     }
 
     test('CanNotAddACustomerWithEmptyName', function () {
-        assertErrorsWhenExecutingAndCustomerBookStaysEmpty(function () {
+        assertErrorsWhenOperatingWithCustomerBookWhichRemainsEmpty(function () {
             customerBook.addCustomerNamed("")
         }, Error, CustomerBook.prototype.CUSTOMER_NAME_EMPTY);
     });
 
     test('CanNotRemoveNotAddedCustomers', function () {
-       assertErrorsWhenExecutingAndCustomerBookStaysEmpty(function() {
+       assertErrorsWhenOperatingWithCustomerBookWhichRemainsEmpty(function() {
             customerBook.removeCustomerNamed("John Lennon");
        }, IllegalArgumentException, CustomerBook.prototype.INVALID_CUSTOMER_NAME);
     });
