@@ -290,14 +290,20 @@ initalizeWith: aValue
 + anAdder 
 	^anAdder sumarEntero: self ! !
 
-!Entero methodsFor: 'arithmetic operations' stamp: 'LJ 9/7/2017 21:41:58'!
-/ aDivisor 
-	^ aDivisor serDivididoPorUnEntero: self! !
+!Entero methodsFor: 'arithmetic operations' stamp: 'LJ 9/7/2017 21:52:55'!
+/ aDivisor
+	^ aDivisor actuarComoDenominadorParaUnEntero: self.! !
 
 !Entero methodsFor: 'arithmetic operations' stamp: 'HernanWilkinson 5/7/2016 21:55'!
 // aDivisor 
 	
 	^self class with: value // aDivisor integerValue! !
+
+!Entero methodsFor: 'arithmetic operations' stamp: 'LJ 9/7/2017 21:52:55'!
+actuarComoDenominadorParaUnEntero: unEntero
+	^ Fraccion
+		with: unEntero
+		over: self.! !
 
 !Entero methodsFor: 'arithmetic operations' stamp: 'HernanWilkinson 5/7/2016 21:00'!
 greatestCommonDivisorWith: anEntero 
@@ -307,10 +313,6 @@ greatestCommonDivisorWith: anEntero
 !Entero methodsFor: 'arithmetic operations' stamp: 'LJ 9/7/2017 21:35:19'!
 multiplicarPorFraccion: unaFraccion
 	^ unaFraccion multiplicarPorEntero: self! !
-
-!Entero methodsFor: 'arithmetic operations' stamp: 'LJ 9/7/2017 21:42:53'!
-serDivididoPorUnEntero: unEntero
-	^ Fraccion with: self over: unEntero! !
 
 !Entero methodsFor: 'arithmetic operations' stamp: 'LJ 9/7/2017 21:07:23'!
 sumarEntero: unEntero
@@ -392,6 +394,10 @@ hash
 / aDivisor 
 	
 	^(numerator * aDivisor denominator) / (denominator * aDivisor numerator)! !
+
+!Fraccion methodsFor: 'arithmetic operations' stamp: 'LJ 9/7/2017 21:52:55'!
+actuarComoDenominadorParaUnEntero: unEntero
+	^ self shouldBeImplemented.! !
 
 !Fraccion methodsFor: 'arithmetic operations' stamp: 'LJ 9/7/2017 21:36:32'!
 multiplicarPorFraccion: unaFraccion 
