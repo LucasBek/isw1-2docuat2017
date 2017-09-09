@@ -305,6 +305,10 @@ actuarComoDenominadorParaUnEntero: unEntero
 		with: unEntero
 		over: self.! !
 
+!Entero methodsFor: 'arithmetic operations' stamp: 'LJ 9/9/2017 10:08:15'!
+actuarComoDenominadorParaUnaFraccion: unaFraccion
+	^ Fraccion with: unaFraccion numerator over: (unaFraccion denominator * self).! !
+
 !Entero methodsFor: 'arithmetic operations' stamp: 'HernanWilkinson 5/7/2016 21:00'!
 greatestCommonDivisorWith: anEntero 
 	
@@ -390,14 +394,18 @@ hash
 + anAdder 
 	^anAdder sumarFraccion: self! !
 
-!Fraccion methodsFor: 'arithmetic operations' stamp: 'HernanWilkinson 5/7/2016 23:14'!
+!Fraccion methodsFor: 'arithmetic operations' stamp: 'LJ 9/9/2017 10:05:45'!
 / aDivisor 
 	
-	^(numerator * aDivisor denominator) / (denominator * aDivisor numerator)! !
+	^ aDivisor actuarComoDenominadorParaUnaFraccion: self.! !
 
-!Fraccion methodsFor: 'arithmetic operations' stamp: 'LJ 9/7/2017 21:52:55'!
+!Fraccion methodsFor: 'arithmetic operations' stamp: 'LJ 9/9/2017 10:05:05'!
 actuarComoDenominadorParaUnEntero: unEntero
-	^ self shouldBeImplemented.! !
+	^ Fraccion with: ( denominator * unEntero ) over: numerator.! !
+
+!Fraccion methodsFor: 'arithmetic operations' stamp: 'LJ 9/9/2017 10:06:52'!
+actuarComoDenominadorParaUnaFraccion: unaFraccion
+	^ (unaFraccion numerator * denominator) / (unaFraccion denominator * numerator).! !
 
 !Fraccion methodsFor: 'arithmetic operations' stamp: 'LJ 9/7/2017 21:36:32'!
 multiplicarPorFraccion: unaFraccion 
