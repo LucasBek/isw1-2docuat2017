@@ -254,15 +254,15 @@ integerValue
 	^value! !
 
 
-!Entero methodsFor: 'testing' stamp: 'HernanWilkinson 5/7/2016 20:14'!
+!Entero methodsFor: 'testing' stamp: 'asd 9/12/2017 00:24:35'!
 isOne
 	
-	^value = 1! !
+	^false! !
 
-!Entero methodsFor: 'testing' stamp: 'HernanWilkinson 5/7/2016 20:12'!
+!Entero methodsFor: 'testing' stamp: 'asd 9/12/2017 00:24:28'!
 isZero
 	
-	^value = 0! !
+	^false! !
 
 
 !Entero methodsFor: 'comparing' stamp: 'HernanWilkinson 5/7/2016 21:01'!
@@ -294,10 +294,10 @@ initalizeWith: aValue
 / aDivisor
 	^ aDivisor actuarComoDenominadorParaUnEntero: self.! !
 
-!Entero methodsFor: 'arithmetic operations' stamp: 'HernanWilkinson 5/7/2016 21:55'!
+!Entero methodsFor: 'arithmetic operations' stamp: 'asd 9/12/2017 01:07:10'!
 // aDivisor 
 	
-	^self class with: value // aDivisor integerValue! !
+	^Entero with: value // aDivisor integerValue! !
 
 !Entero methodsFor: 'arithmetic operations' stamp: 'LJ 9/7/2017 21:52:55'!
 actuarComoDenominadorParaUnEntero: unEntero
@@ -309,27 +309,33 @@ actuarComoDenominadorParaUnEntero: unEntero
 actuarComoDenominadorParaUnaFraccion: unaFraccion
 	^ Fraccion with: unaFraccion numerator over: (unaFraccion denominator * self).! !
 
-!Entero methodsFor: 'arithmetic operations' stamp: 'HernanWilkinson 5/7/2016 21:00'!
+!Entero methodsFor: 'arithmetic operations' stamp: 'asd 9/12/2017 01:07:20'!
 greatestCommonDivisorWith: anEntero 
 	
-	^self class with: (value gcd: anEntero integerValue)! !
+	^Entero with: (value gcd: anEntero integerValue)! !
+
+!Entero methodsFor: 'arithmetic operations' stamp: 'asd 9/12/2017 01:10:47'!
+ifOne: bloque! !
+
+!Entero methodsFor: 'arithmetic operations' stamp: 'asd 9/12/2017 01:10:52'!
+ifZero: bloque! !
 
 !Entero methodsFor: 'arithmetic operations' stamp: 'LJ 9/7/2017 21:35:19'!
 multiplicarPorFraccion: unaFraccion
 	^ unaFraccion multiplicarPorEntero: self! !
 
-!Entero methodsFor: 'arithmetic operations' stamp: 'LJ 9/7/2017 21:07:23'!
+!Entero methodsFor: 'arithmetic operations' stamp: 'asd 9/12/2017 01:07:31'!
 sumarEntero: unEntero
-	^ self class with: (unEntero integerValue + value) ! !
+	^Entero with: (unEntero integerValue + value) ! !
 
 !Entero methodsFor: 'arithmetic operations' stamp: 'LJ 9/7/2017 21:30:18'!
 sumarFraccion: fraccion
 	^ fraccion sumarEntero: self! !
 
 
-!Entero methodsFor: 'as yet unclassified' stamp: 'LJ 9/7/2017 21:32:42'!
+!Entero methodsFor: 'as yet unclassified' stamp: 'asd 9/12/2017 01:07:53'!
 multiplicarPorEntero:  unEntero
-	^self class with: value * unEntero integerValue! !
+	^Entero with: value * unEntero integerValue! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -337,13 +343,89 @@ multiplicarPorEntero:  unEntero
 Entero class
 	instanceVariableNames: ''!
 
-!Entero class methodsFor: 'instance creation' stamp: 'HernanWilkinson 5/7/2016 22:53'!
+!Entero class methodsFor: 'instance creation' stamp: 'asd 9/12/2017 00:59:30'!
 with: aValue 
 	
 	"Esta verificacion esta puesta por si se equivocan y quieren crear un Entero pasando otra cosa que un Integer - Hernan"
-	aValue isInteger ifFalse: [  self error: 'aValue debe ser anInteger' ].
+	aValue isInteger ifFalse: [  self error: 'aValue debe ser anInteger' ].	aValue = 0 ifTrue: [^ Cero nuevo].
+	aValue = 1 ifTrue: [^ Uno nuevo].
 	
 	^self new initalizeWith: aValue! !
+
+
+!classDefinition: #Cero category: #'Numero-Exercise'!
+Entero subclass: #Cero
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Numero-Exercise'!
+
+!Cero methodsFor: 'as yet unclassified' stamp: 'asd 9/12/2017 01:09:43'!
+ifOne: bloque
+	! !
+
+!Cero methodsFor: 'as yet unclassified' stamp: 'asd 9/12/2017 01:09:31'!
+ifZero: bloque
+	bloque value.! !
+
+!Cero methodsFor: 'as yet unclassified' stamp: 'asd 9/12/2017 01:01:47'!
+initialize
+	value := 0.! !
+
+!Cero methodsFor: 'as yet unclassified' stamp: 'asd 9/12/2017 00:25:07'!
+isOne
+	^false.! !
+
+!Cero methodsFor: 'as yet unclassified' stamp: 'asd 9/12/2017 00:24:57'!
+isZero
+	^true.! !
+
+"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
+
+!classDefinition: 'Cero class' category: #'Numero-Exercise'!
+Cero class
+	instanceVariableNames: ''!
+
+!Cero class methodsFor: 'as yet unclassified' stamp: 'asd 9/12/2017 01:02:16'!
+nuevo
+	^ self new initialize.! !
+
+
+!classDefinition: #Uno category: #'Numero-Exercise'!
+Entero subclass: #Uno
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Numero-Exercise'!
+
+!Uno methodsFor: 'as yet unclassified' stamp: 'asd 9/12/2017 01:10:17'!
+ifOne: bloque
+	bloque value.! !
+
+!Uno methodsFor: 'as yet unclassified' stamp: 'asd 9/12/2017 01:10:26'!
+ifZero: bloque ! !
+
+!Uno methodsFor: 'as yet unclassified' stamp: 'asd 9/12/2017 01:02:03'!
+initialize
+	value := 1.! !
+
+!Uno methodsFor: 'as yet unclassified' stamp: 'asd 9/12/2017 00:25:33'!
+isOne
+	^true.! !
+
+!Uno methodsFor: 'as yet unclassified' stamp: 'asd 9/12/2017 00:25:24'!
+isZero
+	^false.! !
+
+"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
+
+!classDefinition: 'Uno class' category: #'Numero-Exercise'!
+Uno class
+	instanceVariableNames: ''!
+
+!Uno class methodsFor: 'as yet unclassified' stamp: 'asd 9/12/2017 01:02:10'!
+nuevo
+	^ self new initialize.! !
 
 
 !classDefinition: #Fraccion category: #'Numero-Exercise'!
@@ -364,12 +446,12 @@ isZero
 	^false! !
 
 
-!Fraccion methodsFor: 'initialization' stamp: 'HernanWilkinson 5/7/2016 22:54'!
+!Fraccion methodsFor: 'initialization' stamp: 'asd 9/12/2017 01:13:21'!
 initializeWith: aNumerator over: aDenominator
 
 	"Estas precondiciones estan por si se comenten errores en la implementacion - Hernan"
-	aNumerator isZero ifTrue: [ self error: 'una fraccion no puede ser cero' ].
-	aDenominator isOne ifTrue: [ self error: 'una fraccion no puede tener denominador 1 porque sino es un entero' ].
+	aNumerator ifZero: [ self error: 'una fraccion no puede ser cero' ].
+	aDenominator ifOne: [ self error: 'una fraccion no puede tener denominador 1 porque sino es un entero' ].
 	
 	numerator := aNumerator.
 	denominator := aDenominator ! !
@@ -447,19 +529,19 @@ sumarFraccion: fraccion
 Fraccion class
 	instanceVariableNames: ''!
 
-!Fraccion class methodsFor: 'intance creation' stamp: 'HernanWilkinson 5/7/2016 20:41'!
+!Fraccion class methodsFor: 'intance creation' stamp: 'asd 9/12/2017 01:11:40'!
 with: aDividend over: aDivisor
 
 	| greatestCommonDivisor numerator denominator |
 	
-	aDivisor isZero ifTrue: [ self error: self canNotDivideByZeroErrorDescription ].
-	aDividend isZero ifTrue: [ ^aDividend ].
+	aDivisor ifZero: [ self error: self canNotDivideByZeroErrorDescription ].
+	aDividend ifZero: [ ^aDividend ].
 	
 	greatestCommonDivisor := aDividend greatestCommonDivisorWith: aDivisor. 
 	numerator := aDividend // greatestCommonDivisor.
 	denominator := aDivisor // greatestCommonDivisor.
 	
-	denominator isOne ifTrue: [ ^numerator ].
+	denominator ifOne: [ ^numerator ].
 
 	^self new initializeWith: numerator over: denominator
 	! !
