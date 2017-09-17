@@ -11,37 +11,37 @@
 package stack;
 
 public class Stack {
-
+	private StackTop top;
+	public Stack () {
+		top = new EmptyStackTop();
+	}
+	
 	public static final String STACK_EMPTY_DESCRIPTION = "Stack is Empty";
 
 	public void push (Object anObject)
 	{
-		shouldImplement();
+		top = new FilledStackTop(top, anObject);
 	}
 	
-	public Object pop()
+	public Object pop() throws Exception
 	{
-		return shouldImplement();
+		Object previous = this.top();
+		top = top.previous();
+		return previous;
 	}
 	
-	public Object top()
+	public Object top() throws Exception
 	{
-		return shouldImplement();
+		return top.content();
 	}
 
 	public Boolean isEmpty()
 	{
-		return true;
+		return top.isEmpty();
 	}
 
 	public Integer size()
 	{
-		return (Integer) shouldImplement();
+		return top.size();
 	}
-	
-	private Object shouldImplement()
-	{
-		throw new RuntimeException ("Should Implement");
-	}
-	
 }
