@@ -23,14 +23,14 @@ public class Stack {
 		top = new FilledStackTop(top, anObject);
 	}
 	
-	public Object pop() throws Exception
+	public Object pop()
 	{
 		Object previous = this.top();
 		top = top.previous();
 		return previous;
 	}
 	
-	public Object top() throws Exception
+	public Object top()
 	{
 		return top.content();
 	}

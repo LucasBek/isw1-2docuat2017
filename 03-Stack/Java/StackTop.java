@@ -1,8 +1,8 @@
 package stack;
 
-public abstract class StackTop {
-	public abstract boolean isEmpty();
-	public abstract Integer size();
-	public abstract Object content() throws Exception;
-	public abstract StackTop previous() throws Exception;
+public interface StackTop {
+	public boolean isEmpty();
+	public Integer size();
+	public Object content();
+	public StackTop previous();
 }

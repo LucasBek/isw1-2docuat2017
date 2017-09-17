@@ -1,6 +1,6 @@
 package stack;
 
-public class FilledStackTop extends StackTop {
+public class FilledStackTop implements StackTop {
 	private StackTop previous;
 	
 	private Object content;
@@ -10,23 +10,19 @@ public class FilledStackTop extends StackTop {
 		this.content = content;
 	}
 
-	@Override
 	public boolean isEmpty() {
 		return false;
 	}
 
-	@Override
 	public Integer size() {
 		return 1 + previous.size();
 	}
 
-	@Override
-	public Object content() throws Exception {
+	public Object content() {
 		return content;
 	}
 
-	@Override
-	public StackTop previous() throws Exception {
+	public StackTop previous() {
 		return previous;
 	}
 
