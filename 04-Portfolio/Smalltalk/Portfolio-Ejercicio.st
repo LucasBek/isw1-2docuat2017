@@ -414,18 +414,18 @@ balance
 	^ accounts inject: 0 into: [ :balance :account | balance + (account balance) ]! !
 
 
-!Portfolio methodsFor: 'testing' stamp: 'LJ 9/21/2017 18:54:21'!
+!Portfolio methodsFor: 'testing' stamp: 'LJ 9/23/2017 11:58:37'!
 manages: anAccount
-	^ accounts detect: [:account | (account = anAccount)  or: (account manages: anAccount) ] ifFound: [:account | true] ifNone: [false]! !
+	^ accounts inject: false into: [:manages :account | manages or: (account = anAccount)  or: (account manages: anAccount) ].! !
 
-!Portfolio methodsFor: 'testing' stamp: 'LJ 9/21/2017 18:41:50'!
+!Portfolio methodsFor: 'testing' stamp: 'LJ 9/23/2017 11:57:55'!
 registers: aTtransaction
-	^ accounts detect: [:account | account registers: aTtransaction ] ifFound: [:account | true] ifNone: [false]! !
+	^ accounts  inject: false into: [:registers :account | registers or: (account registers: aTtransaction) ]! !
 
 
-!Portfolio methodsFor: 'transactions' stamp: 'LJ 9/23/2017 09:41:37'!
+!Portfolio methodsFor: 'transactions' stamp: 'LJ 9/23/2017 12:03:02'!
 transactions 
-	^ accounts inject: (OrderedCollection new) into: [ :t :account | (account transactions) do: [:transaction | t add: transaction]. t]! !
+	^ accounts inject: (OrderedCollection new) into: [ :t :account | t addAllLast: (account transactions). t]! !
 
 !Portfolio methodsFor: 'transactions' stamp: 'LJ 9/23/2017 09:46:27'!
 transactionsOf: anAccount 
