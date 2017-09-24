@@ -416,7 +416,7 @@ balance
 
 !Portfolio methodsFor: 'testing' stamp: 'LJ 9/23/2017 11:58:37'!
 manages: anAccount
-	^ accounts inject: false into: [:manages :account | manages or: (account = anAccount)  or: (account manages: anAccount) ].! !
+	^ self = anAccount or: (accounts inject: false into: [:manages :account | manages or: (account manages: anAccount) ]).! !
 
 !Portfolio methodsFor: 'testing' stamp: 'LJ 9/23/2017 11:57:55'!
 registers: aTtransaction
@@ -430,7 +430,7 @@ transactions
 !Portfolio methodsFor: 'transactions' stamp: 'LJ 9/23/2017 09:46:27'!
 transactionsOf: anAccount 
 
-	^ accounts detect: [:account | (account = anAccount)  or: (account manages: anAccount) ] ifFound: [:account | anAccount transactions] ifNone: [self error: self class accountNotManagedMessageDescription ]! !
+	^ accounts detect: [:account | account manages: anAccount ] ifFound: [:account | anAccount transactions] ifNone: [self error: self class accountNotManagedMessageDescription ].! !
 
 
 !Portfolio methodsFor: 'as yet unclassified' stamp: 'LJ 9/23/2017 09:53:50'!
