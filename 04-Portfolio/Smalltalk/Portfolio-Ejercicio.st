@@ -416,11 +416,11 @@ balance
 
 !Portfolio methodsFor: 'testing' stamp: 'LJ 9/23/2017 11:58:37'!
 manages: anAccount
-	^ self = anAccount or: (accounts inject: false into: [:manages :account | manages or: (account manages: anAccount) ]).! !
+	^ self = anAccount or: (accounts anySatisfy: [:account | account manages: anAccount ]).! !
 
 !Portfolio methodsFor: 'testing' stamp: 'LJ 9/23/2017 11:57:55'!
 registers: aTtransaction
-	^ accounts  inject: false into: [:registers :account | registers or: (account registers: aTtransaction) ]! !
+	^ accounts anySatisfy: [:account | account registers: aTtransaction ].! !
 
 
 !Portfolio methodsFor: 'transactions' stamp: 'LJ 9/23/2017 12:03:02'!
