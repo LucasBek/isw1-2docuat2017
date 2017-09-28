@@ -975,6 +975,10 @@ Object subclass: #AccountVisitor
 	poolDictionaries: ''
 	category: 'PortfolioTreePrinter-Ejercicio'!
 
+!AccountVisitor methodsFor: 'as yet unclassified' stamp: 'LJ 9/28/2017 15:41:58'!
+value
+	^ self subclassResponsibility.! !
+
 !AccountVisitor methodsFor: 'as yet unclassified' stamp: 'LJ 9/28/2017 14:41:41'!
 visitPortfolio: aReceptiveAccount
 	^ self subclassResponsibility.! !
@@ -1057,6 +1061,10 @@ balance
 !SummarizingAccount methodsFor: 'transactions' stamp: 'HernanWilkinson 7/13/2011 18:35'!
 transactions
 
+	self subclassResponsibility ! !
+
+!SummarizingAccount methodsFor: 'transactions' stamp: 'LJ 9/28/2017 15:42:57'!
+visit: aVisitor
 	self subclassResponsibility ! !
 
 
