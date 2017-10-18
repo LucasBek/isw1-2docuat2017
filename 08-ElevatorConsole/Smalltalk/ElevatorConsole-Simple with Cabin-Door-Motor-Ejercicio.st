@@ -528,7 +528,7 @@ test04ElevatorControllerCanHaveMoreThanOneView
 	self assert: 'Opening' = elevatorStatusView cabinDoorFieldModel! !
 
 
-!ElevatorViewTest methodsFor: 'setup' stamp: 'HAW 10/4/2017 13:50:13'!
+!ElevatorViewTest methodsFor: 'setup' stamp: 'LJ 10/18/2017 19:19:17'!
 setUp
 
 	elevator := Elevator new.
@@ -568,35 +568,27 @@ waitForPeople
 ! !
 
 
-!Cabin methodsFor: 'state change' stamp: 'kl 10/12/2017 19:49:49'!
+!Cabin methodsFor: 'state change' stamp: 'LJ 10/18/2017 19:14:50'!
 makeMoving
 	
 	state := CabinMovingState for: self.
-	elevator notifyCabinMoving: state.! !
+	ObserverManager uniqueInstance notifyEventFor: self.! !
 
-!Cabin methodsFor: 'state change' stamp: 'kl 10/12/2017 19:51:48'!
+!Cabin methodsFor: 'state change' stamp: 'LJ 10/18/2017 19:14:42'!
 makeStopped
 	
 	state := CabinStoppedState for: self.
-	elevator notifyCabinStopped: state.! !
+	ObserverManager uniqueInstance notifyEventFor: self.! !
 
 !Cabin methodsFor: 'state change' stamp: 'HAW 10/4/2017 14:15:37'!
 makeWaitingForPeople
 	
 	state := CabinWaitingForPeopleState for: self! !
 
-
-!Cabin methodsFor: 'as yet unclassified' stamp: 'kl 10/12/2017 19:34:07'!
-notifyClosedDoor: aCabinDoorClosedState
-	elevator notifyClosedDoor: aCabinDoorClosedState.! !
-
-!Cabin methodsFor: 'as yet unclassified' stamp: 'kl 10/12/2017 19:19:22'!
-notifyClosingDoor: aCabinDoorClosingState
-	elevator notifyClosingDoor: aCabinDoorClosingState.! !
-
-!Cabin methodsFor: 'as yet unclassified' stamp: 'kl 10/12/2017 19:53:32'!
-notifyDoorOpening: aCabinDoorOpeningState
-	elevator notifyDoorOpening: aCabinDoorOpeningState.! !
+!Cabin methodsFor: 'state change' stamp: 'LJ 10/18/2017 19:12:29'!
+notifyEventTo: anObserver
+	
+	state accept: anObserver.! !
 
 
 !Cabin methodsFor: 'sensor activation' stamp: 'HAW 10/3/2017 16:47:02'!
@@ -881,28 +873,32 @@ isMotorStopped
 	^motor isStopped! !
 
 
-!CabinDoor methodsFor: 'state change' stamp: 'kl 10/12/2017 19:33:41'!
+!CabinDoor methodsFor: 'state change' stamp: 'LJ 10/18/2017 18:59:02'!
 makeClosed
 	
 	state := CabinDoorClosedState for: self.
-	cabin notifyClosedDoor: state.! !
+	ObserverManager uniqueInstance notifyEventFor: self.! !
 
-!CabinDoor methodsFor: 'state change' stamp: 'kl 10/12/2017 19:18:52'!
+!CabinDoor methodsFor: 'state change' stamp: 'LJ 10/18/2017 18:58:54'!
 makeClosing
 	
 	state := CabinDoorClosingState for: self.
-	cabin notifyClosingDoor: state.! !
+	ObserverManager uniqueInstance notifyEventFor: self.! !
 
-!CabinDoor methodsFor: 'state change' stamp: 'HAW 10/4/2017 14:15:02'!
+!CabinDoor methodsFor: 'state change' stamp: 'LJ 10/18/2017 18:58:32'!
 makeOpened
 	
 	state := CabinDoorOpenedState for: self! !
 
-!CabinDoor methodsFor: 'state change' stamp: 'kl 10/12/2017 19:53:04'!
+!CabinDoor methodsFor: 'state change' stamp: 'LJ 10/18/2017 18:57:16'!
 makeOpening
 	
 	state := CabinDoorOpeningState for: self.
-	cabin notifyDoorOpening: state.! !
+	ObserverManager uniqueInstance notifyEventFor: self.! !
+
+!CabinDoor methodsFor: 'state change' stamp: 'LJ 10/18/2017 18:56:43'!
+notifyEventTo: anObserver
+	state accept: anObserver.! !
 
 
 !CabinDoor methodsFor: 'exceptions' stamp: 'HAW 10/3/2017 20:08:30'!
@@ -1342,18 +1338,18 @@ accept: aVisitor
 
 !classDefinition: #Elevator category: #'ElevatorConsole-Simple with Cabin-Door-Motor-Ejercicio'!
 Object subclass: #Elevator
-	instanceVariableNames: 'cabin state floorsToGo observers'
+	instanceVariableNames: 'cabin state floorsToGo'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'ElevatorConsole-Simple with Cabin-Door-Motor-Ejercicio'!
 
-!Elevator methodsFor: 'initialization' stamp: 'kl 10/12/2017 19:45:31'!
+!Elevator methodsFor: 'initialization' stamp: 'LJ 10/18/2017 19:27:45'!
 initialize
 
 	cabin := Cabin of: self.
 	floorsToGo := SortedCollection new.
-	state := ElevatorIdleState for: self.
-	observers := OrderedCollection new.! !
+	state := ElevatorIdleState for: self.	
+! !
 
 
 !Elevator methodsFor: 'state change' stamp: 'HAW 10/3/2017 16:56:07'!
@@ -1387,30 +1383,6 @@ goUpPushedFromFloorWhenWorking: aFloorNumber
 jobDone
 	
 	self makeIdle ! !
-
-!Elevator methodsFor: 'actions - private' stamp: 'kl 10/12/2017 19:29:44'!
-notify: aMessage with: aState
-	observers do: [:anObserver | aMessage sendTo: anObserver with: aState]! !
-
-!Elevator methodsFor: 'actions - private' stamp: 'kl 10/12/2017 19:50:22'!
-notifyCabinMoving: aCabinMovingState
-	self notify: #visitCabinMoving: with: aCabinMovingState.! !
-
-!Elevator methodsFor: 'actions - private' stamp: 'kl 10/12/2017 19:52:14'!
-notifyCabinStopped: aCabinStoppedState
-	self notify: #visitCabinStopped: with: aCabinStoppedState.! !
-
-!Elevator methodsFor: 'actions - private' stamp: 'kl 10/12/2017 19:34:33'!
-notifyClosedDoor: aClosedDoorState
-	self notify: #visitCabinDoorClosed: with: aClosedDoorState.! !
-
-!Elevator methodsFor: 'actions - private' stamp: 'kl 10/12/2017 19:31:09'!
-notifyClosingDoor: aClosingDoorState
-	self notify: #visitCabinDoorClosing: with: aClosingDoorState.! !
-
-!Elevator methodsFor: 'actions - private' stamp: 'kl 10/12/2017 19:54:02'!
-notifyDoorOpening: anOpeningDoorState
-	self notify: #visitCabinDoorOpening: with: anOpeningDoorState.! !
 
 !Elevator methodsFor: 'actions - private' stamp: 'HAW 10/3/2017 16:11:45'!
 queFloorToGo: aFloorNumber
@@ -1451,10 +1423,6 @@ isWorking
 	^state isWorking! !
 
 
-!Elevator methodsFor: 'cabin' stamp: 'kl 10/12/2017 19:46:05'!
-attach: anObserver
-	observers add: anObserver.! !
-
 !Elevator methodsFor: 'cabin' stamp: 'HAW 10/4/2017 09:59:35'!
 cabin
 	
@@ -1468,11 +1436,13 @@ Object subclass: #ElevatorConsole
 	poolDictionaries: ''
 	category: 'ElevatorConsole-Simple with Cabin-Door-Motor-Ejercicio'!
 
-!ElevatorConsole methodsFor: 'initialization' stamp: 'kl 10/12/2017 19:48:13'!
+!ElevatorConsole methodsFor: 'initialization' stamp: 'LJ 10/18/2017 19:01:11'!
 initializeOf: anElevator
 	
 	stream := WriteStream on: String new.
-	anElevator attach: self.
+	ObserverManager uniqueInstance subscribe: self to: anElevator cabin.
+	ObserverManager uniqueInstance subscribe: self to: anElevator cabin door.
+
 ! !
 
 
@@ -1634,9 +1604,10 @@ Object subclass: #ElevatorStatusView
 	poolDictionaries: ''
 	category: 'ElevatorConsole-Simple with Cabin-Door-Motor-Ejercicio'!
 
-!ElevatorStatusView methodsFor: 'initialization' stamp: 'kl 10/12/2017 19:48:30'!
+!ElevatorStatusView methodsFor: 'initialization' stamp: 'LJ 10/18/2017 19:15:22'!
 initializeOf: anElevator
-	anElevator attach: self.! !
+	ObserverManager uniqueInstance subscribe: self to: anElevator cabin.
+	ObserverManager uniqueInstance subscribe: self to: anElevator cabin door.! !
 
 
 !ElevatorStatusView methodsFor: 'accessing' stamp: 'HAW 10/4/2017 12:41:24'!
@@ -1778,3 +1749,37 @@ Motor class
 motorMustBeStoppedBeforeMovingAgainErrorMessage
 
 	^'El motor debe estar parado antes de que se empiece a mover'! !
+
+
+!classDefinition: #ObserverManager category: #'ElevatorConsole-Simple with Cabin-Door-Motor-Ejercicio'!
+Object subclass: #ObserverManager
+	instanceVariableNames: 'subjectObservers'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'ElevatorConsole-Simple with Cabin-Door-Motor-Ejercicio'!
+
+!ObserverManager methodsFor: 'as yet unclassified' stamp: 'LJ 10/18/2017 19:03:28'!
+initialize
+	subjectObservers := Dictionary new.! !
+
+!ObserverManager methodsFor: 'as yet unclassified' stamp: 'LJ 10/18/2017 19:11:09'!
+notifyEventFor: aSubject
+	subjectObservers at: aSubject ifPresent: [:observers| observers do: [:observer| aSubject notifyEventTo: observer]].! !
+
+!ObserverManager methodsFor: 'as yet unclassified' stamp: 'LJ 10/18/2017 19:24:39'!
+subscribe: anObserver to: aSubject
+	|observers|	
+	observers:= subjectObservers at: aSubject ifAbsent: [subjectObservers  at: aSubject put: OrderedCollection new].
+	observers add: anObserver.! !
+
+"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
+
+!classDefinition: 'ObserverManager class' category: #'ElevatorConsole-Simple with Cabin-Door-Motor-Ejercicio'!
+ObserverManager class
+	instanceVariableNames: 'observerManagerSingleton'!
+
+!ObserverManager class methodsFor: 'access' stamp: 'LJ 10/18/2017 19:09:20'!
+uniqueInstance
+	observerManagerSingleton ifNil: [observerManagerSingleton := self new initialize].
+	^observerManagerSingleton.
+	! !
