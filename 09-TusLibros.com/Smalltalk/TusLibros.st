@@ -31,17 +31,6 @@ test04WhenAddingTwiceTheSameBookToACartItsSizeIsTwo
 	cart add: book.
 	self assert: (cart size) equals: 2.! !
 
-!TestTusLibros methodsFor: 'Cart' stamp: 'kl 10/26/2017 21:28:04'!
-test05CartListOfProductsEqualsBooksAdded
-	|expected|
-	cart add: book.
-	cart add: secondBook.
-	cart add: book.
-	expected := cart products.
-	self assert: (expected occurrencesOf: book) equals: 2.
-	self assert: (expected occurrencesOf: secondBook) equals: 1.
-	self assert: expected size equals: 3.! !
-
 !TestTusLibros methodsFor: 'Cart' stamp: 'LJ 10/28/2017 17:31:19'!
 test06CartListOfProductsEqualsBooksAdded
 	|expected|
@@ -53,59 +42,52 @@ test06CartListOfProductsEqualsBooksAdded
 	self assert: (expected occurrencesOf: secondBook) equals: 1.
 	self assert: expected size equals: 12.! !
 
-!TestTusLibros methodsFor: 'Cart' stamp: 'LJ 10/28/2017 17:38:43'!
-test07WhenAddingANotNaturalNumberOfItemsToTheCartThrowsIncorrectNumberErrorAndRemainsEmpty
-	self
-		should: [cart add: book times: (-10)]
-		raise: Error
-		withExceptionDo: [:anError | 
-			self assert: (anError messageText) equals: Cart numberNotNaturalErrorMessage.
-			self assert: cart isEmpty.
-		].
-	self
-		should: [cart add: book times: (1 / 3)]
-		raise: Error
-		withExceptionDo: [:anError | 
-			self assert: (anError messageText) equals: Cart numberNotNaturalErrorMessage.
-			self assert: cart isEmpty.
-		].
-	self
-		should: [cart add: book times: 0]
-		raise: Error
-		withExceptionDo: [:anError | 
-			self assert: (anError messageText) equals: Cart numberNotNaturalErrorMessage.
-			self assert: cart isEmpty.
-		].! !
+!TestTusLibros methodsFor: 'Cart' stamp: 'LJ 10/29/2017 16:13:47'!
+test07WhenAddingANotNaturalNumberOfItemsToTheCartThrowsIncorrectNumberErrorAndRemainsEmpty	
+	|notNaturalNumbers|
+	notNaturalNumbers := OrderedCollection with: -10 with: 0 with: 1/3.
+	
+	notNaturalNumbers do: [:aNotNaturalnumber |
+		self
+			should: [cart add: book times: aNotNaturalnumber]
+			raise: Error
+			withExceptionDo: [:anError | 
+				self assert: (anError messageText) equals: Cart numberNotNaturalErrorMessage.
+				self assert: cart isEmpty.
+			].
+	].
+	! !
 
 
-!TestTusLibros methodsFor: 'Setup' stamp: 'LJ 10/28/2017 18:20:50'!
+!TestTusLibros methodsFor: 'Setup' stamp: 'LJ 10/29/2017 15:56:41'!
 setUp
 	book _'1'.
 	secondBook _ '2'.
 	anotherEditorialBook _ '3'.
 	catalogue _ Set with: book with: secondBook.
 	cart _ Cart withCatalogue: catalogue.
-	expiredCreditCard _ CreditCard for: 'Pepe' withNumber: 1 andExpirationDate: (Date year: 1995 month: #May day: 3).
-	creditCard _ CreditCard for: 'Pepe' withNumber: 1 andExpirationDate: (Date year: 1996 month: #May day: 3).
+	expiredCreditCard _ CreditCard for: 'Pepe' withNumber: 1 andExpirationDate: (GregorianMonthOfYear mayOf: 1995).
+	creditCard _ CreditCard for: 'Pepe' withNumber: 1 andExpirationDate: (GregorianMonthOfYear mayOf: 1996).
+	
 	valuator _ Dictionary newFromPairs: {book . 10 . secondBook . 5 .}.
 	cashier _ Cashier with: valuator.! !
 
 
-!TestTusLibros methodsFor: 'Cashier' stamp: 'LJ 10/28/2017 17:59:36'!
+!TestTusLibros methodsFor: 'Cashier' stamp: 'LJ 10/29/2017 16:25:39'!
 test08WhenCheckingOutEmptyCartErrorMessageIsThrown
 	self
-		should: [cashier charge: cart to: creditCard on: (Date newDay: 4 month: #May year: 1995)]
+		should: [cashier charge: cart to: creditCard on: (GregorianMonthOfYear mayOf: 1995)]
 		raise: Error
 		withExceptionDo: [:anError | 
 			self assert: (anError messageText) equals: Cashier emptyCartErrorMessage.
 			self assert: cart isEmpty.
 		]! !
 
-!TestTusLibros methodsFor: 'Cashier' stamp: 'LJ 10/28/2017 18:06:21'!
+!TestTusLibros methodsFor: 'Cashier' stamp: 'LJ 10/29/2017 16:36:59'!
 test09WhenCheckingOutCartToExpiredCardErrorMessageIsThrown
 	cart add: book.
 	self
-		should: [cashier charge: cart to: expiredCreditCard on: (Date year: 1995 month: #May day: 4)]
+		should: [cashier charge: cart to: expiredCreditCard on: (GregorianMonthOfYear mayOf: 1996)]
 		raise: Error
 		withExceptionDo: [:anError | 
 			self assert: (anError messageText) equals: Cashier expiratedCreditCardErrorMessage.
@@ -187,11 +169,11 @@ Object subclass: #Cashier
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!Cashier methodsFor: 'as yet unclassified' stamp: 'LJ 10/28/2017 17:52:03'!
+!Cashier methodsFor: 'as yet unclassified' stamp: 'LJ 10/29/2017 16:25:13'!
 charge: aCart to: aCreditCard
-	self charge: aCart to: aCreditCard on: Date today.! !
+	self charge: aCart to: aCreditCard on: GregorianMonthOfYear current.! !
 
-!Cashier methodsFor: 'as yet unclassified' stamp: 'LJ 10/28/2017 18:05:43'!
+!Cashier methodsFor: 'as yet unclassified' stamp: 'LJ 10/29/2017 16:34:33'!
 charge: aCart to: aCreditCard on: aDate
 	aCart isEmpty ifTrue: [self error: Cashier emptyCartErrorMessage].
 	aCreditCard expirationDate < aDate ifTrue: [self error: Cashier expiratedCreditCardErrorMessage.]! !
