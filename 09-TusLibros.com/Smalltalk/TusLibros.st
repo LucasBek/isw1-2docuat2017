@@ -1,6 +1,6 @@
 !classDefinition: #TestTusLibros category: #TusLibros!
 TestCase subclass: #TestTusLibros
-	instanceVariableNames: 'cart book anotherEditorialBook catalogue secondBook cashier expiredCreditCard creditCard valuator'
+	instanceVariableNames: 'cart book anotherEditorialBook catalogue secondBook cashier expiredCreditCard creditCard valuator currentMonthYear salesBook merchantProcessorClosure'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'TusLibros'!
@@ -31,18 +31,16 @@ test04WhenAddingTwiceTheSameBookToACartItsSizeIsTwo
 	cart add: book.
 	self assert: (cart size) equals: 2.! !
 
-!TestTusLibros methodsFor: 'Cart' stamp: 'LJ 10/28/2017 17:31:19'!
+!TestTusLibros methodsFor: 'Cart' stamp: 'kl 10/30/2017 19:08:22'!
 test06CartListOfProductsEqualsBooksAdded
-	|expected|
 	cart add: book times: 10.
 	cart add: secondBook.
 	cart add: book.
-	expected := cart products.
-	self assert: (expected occurrencesOf: book) equals: 11.
-	self assert: (expected occurrencesOf: secondBook) equals: 1.
-	self assert: expected size equals: 12.! !
+	self assert: (cart occurrencesOf: book) equals: 11.
+	self assert: (cart occurrencesOf: secondBook) equals: 1.
+! !
 
-!TestTusLibros methodsFor: 'Cart' stamp: 'LJ 10/29/2017 16:13:47'!
+!TestTusLibros methodsFor: 'Cart' stamp: 'kl 10/30/2017 18:58:58'!
 test07WhenAddingANotNaturalNumberOfItemsToTheCartThrowsIncorrectNumberErrorAndRemainsEmpty	
 	|notNaturalNumbers|
 	notNaturalNumbers := OrderedCollection with: -10 with: 0 with: 1/3.
@@ -59,46 +57,90 @@ test07WhenAddingANotNaturalNumberOfItemsToTheCartThrowsIncorrectNumberErrorAndRe
 	! !
 
 
-!TestTusLibros methodsFor: 'Setup' stamp: 'LJ 10/29/2017 15:56:41'!
+!TestTusLibros methodsFor: 'Setup' stamp: 'kl 10/30/2017 21:47:22'!
 setUp
 	book _'1'.
 	secondBook _ '2'.
 	anotherEditorialBook _ '3'.
 	catalogue _ Set with: book with: secondBook.
 	cart _ Cart withCatalogue: catalogue.
-	expiredCreditCard _ CreditCard for: 'Pepe' withNumber: 1 andExpirationDate: (GregorianMonthOfYear mayOf: 1995).
-	creditCard _ CreditCard for: 'Pepe' withNumber: 1 andExpirationDate: (GregorianMonthOfYear mayOf: 1996).
 	
+	currentMonthYear := GregorianMonthOfYear current.
+	expiredCreditCard _ CreditCard for: 'Pepe' withNumber: 1 andExpirationDate: (currentMonthYear previous).
+	creditCard _ CreditCard for: 'Pepe' withNumber: 1 andExpirationDate: (currentMonthYear next next).
 	valuator _ Dictionary newFromPairs: {book . 10 . secondBook . 5 .}.
-	cashier _ Cashier with: valuator.! !
+	
+	salesBook _ OrderedCollection new.
+	
+	cashier _ Cashier with: valuator on: (salesBook) withMerchantProcessor: self.
+	
+	merchantProcessorClosure _ [].! !
 
 
-!TestTusLibros methodsFor: 'Cashier' stamp: 'LJ 10/29/2017 16:25:39'!
+!TestTusLibros methodsFor: 'Cashier' stamp: 'kl 10/30/2017 20:50:27'!
 test08WhenCheckingOutEmptyCartErrorMessageIsThrown
 	self
-		should: [cashier charge: cart to: creditCard on: (GregorianMonthOfYear mayOf: 1995)]
+		should: [cashier charge: cart to: creditCard]
 		raise: Error
 		withExceptionDo: [:anError | 
 			self assert: (anError messageText) equals: Cashier emptyCartErrorMessage.
-			self assert: cart isEmpty.
+			self assert: salesBook isEmpty.
 		]! !
 
-!TestTusLibros methodsFor: 'Cashier' stamp: 'LJ 10/29/2017 16:36:59'!
+!TestTusLibros methodsFor: 'Cashier' stamp: 'kl 10/30/2017 20:51:12'!
 test09WhenCheckingOutCartToExpiredCardErrorMessageIsThrown
 	cart add: book.
 	self
-		should: [cashier charge: cart to: expiredCreditCard on: (GregorianMonthOfYear mayOf: 1996)]
+		should: [cashier charge: cart to: expiredCreditCard]
 		raise: Error
 		withExceptionDo: [:anError | 
 			self assert: (anError messageText) equals: Cashier expiratedCreditCardErrorMessage.
-			self assert: cart size equals: 1.
+			self assert: salesBook isEmpty.
 		]! !
 
-!TestTusLibros methodsFor: 'Cashier' stamp: 'LJ 10/28/2017 18:18:07'!
-test10WhenAskingCashierCartAmountIsCorrect
+!TestTusLibros methodsFor: 'Cashier' stamp: 'kl 10/30/2017 18:46:26'!
+test10WhenCheckingOutSuccessfullyAmountChargedInTicketIsCorrect
 	cart add: book times: 3.
 	cart add: secondBook times: 5. 
-	self assert: (cashier valuate: cart) equals: ((3 * valuator at: book) + (5 * valuator at: secondBook)).! !
+	self assert: ((cashier charge: cart to: creditCard) total) equals: ((3 * valuator at: book) + (5 * valuator at: secondBook)).! !
+
+!TestTusLibros methodsFor: 'Cashier' stamp: 'kl 10/30/2017 21:20:31'!
+test11OnCartCheckoutSaleIsStoredInSalesBook
+	| ticket |
+	cart add: secondBook times: 5. 
+	ticket _ cashier charge: cart to: creditCard.
+	self assert: (salesBook includes: ticket).
+	
+	"Stolen card"
+	"Card with no credit"
+	"Transaction ok"
+	"When there is a problem with the credit card, there was no comunication"
+	! !
+
+
+!TestTusLibros methodsFor: 'MerchantProcessorInterface' stamp: 'kl 10/30/2017 21:47:43'!
+test12CantCheckoutWithStolenCreditCard
+	cart add: secondBook times: 5.
+	
+	self changeMerchantProcessorClosure: [self error: 'Stolen Credit Card'].
+	
+	self should: [cashier charge: cart to: creditCard.] 
+		 raise: Error
+		withExceptionDo: [:anError |
+			self assert: (anError messageText) equals: 'Stolen Credit Card'
+		].
+			
+	
+	! !
+
+
+!TestTusLibros methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 21:43:48'!
+changeMerchantProcessorClosure: aBlockClosure 
+	merchantProcessorClosure _ aBlockClosure .! !
+
+!TestTusLibros methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 21:44:29'!
+debit: anAmount to: aCreditCard
+	merchantProcessorClosure value.! !
 
 
 !classDefinition: #Cart category: #TusLibros!
@@ -135,13 +177,17 @@ initializeWithCatalogue: aCatalogue
 isEmpty
 	^ products isEmpty.! !
 
-!Cart methodsFor: 'as yet unclassified' stamp: 'kl 10/26/2017 21:07:02'!
-products	
-	^ products copy.! !
+!Cart methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 19:09:41'!
+occurrencesOf: aProduct
+	^ products occurrencesOf: aProduct.! !
 
 !Cart methodsFor: 'as yet unclassified' stamp: 'kl 10/26/2017 21:06:27'!
 size
 	^ products size.! !
+
+!Cart methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 19:20:04'!
+uniqueProducts	
+	^ products asSet.! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -164,27 +210,36 @@ withCatalogue: aCatalogue
 
 !classDefinition: #Cashier category: #TusLibros!
 Object subclass: #Cashier
-	instanceVariableNames: 'valuator'
+	instanceVariableNames: 'valuator salesBook merchantProcessor'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!Cashier methodsFor: 'as yet unclassified' stamp: 'LJ 10/29/2017 16:25:13'!
+!Cashier methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 21:42:28'!
 charge: aCart to: aCreditCard
-	self charge: aCart to: aCreditCard on: GregorianMonthOfYear current.! !
-
-!Cashier methodsFor: 'as yet unclassified' stamp: 'LJ 10/29/2017 16:34:33'!
-charge: aCart to: aCreditCard on: aDate
+	| ticket |
 	aCart isEmpty ifTrue: [self error: Cashier emptyCartErrorMessage].
-	aCreditCard expirationDate < aDate ifTrue: [self error: Cashier expiratedCreditCardErrorMessage.]! !
+	(aCreditCard isExpiredOn: GregorianMonthOfYear current) ifTrue: [self error: Cashier expiratedCreditCardErrorMessage.].
+	ticket _ self makeTicketFor: aCart.
+	merchantProcessor debit: (ticket total) to: aCreditCard.
+	^ salesBook add: ticket.
+	! !
 
-!Cashier methodsFor: 'as yet unclassified' stamp: 'LJ 10/28/2017 18:21:47'!
-initializeWith: aValuator
-	valuator := aValuator.! !
+!Cashier methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 19:20:22'!
+makeTicketFor: aCart 
+	^ Ticket with: ( (aCart uniqueProducts collect: [:aProduct | TicketItem for: aProduct withPrice: (valuator at: aProduct) withAmount: (aCart occurrencesOf: aProduct)])).! !
 
-!Cashier methodsFor: 'as yet unclassified' stamp: 'LJ 10/28/2017 18:24:28'!
-valuate: aCart 
-	^ (aCart products collect: [:aProduct | valuator at: aProduct ]) sum.! !
+!Cashier methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 21:41:17'!
+with: aValuator on: aSalesBook
+	valuator := aValuator.
+	salesBook _ aSalesBook.
+	merchantProcessor _ self.! !
+
+!Cashier methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 21:40:45'!
+with: aValuator on: aSalesBook withMerchantProcessor: aMerchantProcessor
+	valuator := aValuator.
+	salesBook _ aSalesBook.
+	merchantProcessor _ aMerchantProcessor .! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -200,9 +255,13 @@ emptyCartErrorMessage
 expiratedCreditCardErrorMessage
 	^ 'Credit card must not be expired'.! !
 
-!Cashier class methodsFor: 'error handling' stamp: 'LJ 10/28/2017 18:21:22'!
-with: aValuator
-	^ self new initializeWith: aValuator.! !
+!Cashier class methodsFor: 'error handling' stamp: 'kl 10/30/2017 20:46:13'!
+with: aValuator on: aSalesBook
+	^ self new with: aValuator on: aSalesBook.! !
+
+!Cashier class methodsFor: 'error handling' stamp: 'kl 10/30/2017 21:40:25'!
+with: aValuator on: aSalesBook withMerchantProcessor: aMerchantProcessor
+	^ self new with: aValuator on: aSalesBook withMerchantProcessor: aMerchantProcessor.! !
 
 
 !classDefinition: #CreditCard category: #TusLibros!
@@ -212,15 +271,16 @@ Object subclass: #CreditCard
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!CreditCard methodsFor: 'as yet unclassified' stamp: 'LJ 10/28/2017 18:10:57'!
-expirationDate
-	^ expirationDate.! !
-
-!CreditCard methodsFor: 'as yet unclassified' stamp: 'LJ 10/28/2017 18:10:18'!
-for: aPerson withNumber: aNumber andExpirationDate: anExpirationDate 
+!CreditCard methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 21:43:22'!
+for: aPerson withNumber: aNumber andExpirationDate: anExpirationDate "	(aPerson trim) length = 0 ifTrue: [self error: 'Person name cannot be empty'].
+	"
 	person := aPerson.
 	number := aNumber.
 	expirationDate := anExpirationDate.! !
+
+!CreditCard methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 18:35:49'!
+isExpiredOn: aDate
+	^ expirationDate < aDate.! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -231,3 +291,58 @@ CreditCard class
 !CreditCard class methodsFor: 'class initialization' stamp: 'LJ 10/28/2017 18:09:34'!
 for: aPerson withNumber: aNumber andExpirationDate: anExpirationDate 
 	^ self new for: aPerson withNumber: aNumber andExpirationDate: anExpirationDate.! !
+
+
+!classDefinition: #Ticket category: #TusLibros!
+Object subclass: #Ticket
+	instanceVariableNames: 'items'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'TusLibros'!
+
+!Ticket methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 19:12:44'!
+initializeWith:	aListOfTicketItems
+	items := aListOfTicketItems.! !
+
+!Ticket methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 19:14:25'!
+total
+	^ (items collect: [:aTicketItem | aTicketItem summarizedAmount]) sum.! !
+
+"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
+
+!classDefinition: 'Ticket class' category: #TusLibros!
+Ticket class
+	instanceVariableNames: ''!
+
+!Ticket class methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 19:13:07'!
+with: aListOfTicketItems
+	^ self new initializeWith: aListOfTicketItems.! !
+
+
+!classDefinition: #TicketItem category: #TusLibros!
+Object subclass: #TicketItem
+	instanceVariableNames: 'amount price product'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'TusLibros'!
+
+!TicketItem methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 19:17:08'!
+for: aProduct withPrice: aPrice withAmount: anAmount
+	product := aProduct.
+	price := aPrice.
+	amount := anAmount.
+	! !
+
+!TicketItem methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 19:14:59'!
+summarizedAmount
+	^ amount * price.! !
+
+"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
+
+!classDefinition: 'TicketItem class' category: #TusLibros!
+TicketItem class
+	instanceVariableNames: ''!
+
+!TicketItem class methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 19:16:33'!
+for: aProduct withPrice: aPrice withAmount: anAmount
+	^ self new for: aProduct withPrice: aPrice withAmount: anAmount.! !
