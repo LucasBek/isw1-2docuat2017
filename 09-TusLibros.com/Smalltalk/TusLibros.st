@@ -57,7 +57,7 @@ test07WhenAddingANotNaturalNumberOfItemsToTheCartThrowsIncorrectNumberErrorAndRe
 	! !
 
 
-!TestTusLibros methodsFor: 'Setup' stamp: 'kl 10/30/2017 21:47:22'!
+!TestTusLibros methodsFor: 'Setup' stamp: 'kl 11/2/2017 20:23:01'!
 setUp
 	book _'1'.
 	secondBook _ '2'.
@@ -72,9 +72,9 @@ setUp
 	
 	salesBook _ OrderedCollection new.
 	
-	cashier _ Cashier with: valuator on: (salesBook) withMerchantProcessor: self.
+	cashier _ Cashier with: [:aProduct | valuator at: aProduct] on: (salesBook) withMerchantProcessor: self.
 	
-	merchantProcessorClosure _ [].! !
+	merchantProcessorClosure _ [:anAmount :aCreditCard |].! !
 
 
 !TestTusLibros methodsFor: 'Cashier' stamp: 'kl 10/30/2017 20:50:27'!
@@ -104,33 +104,91 @@ test10WhenCheckingOutSuccessfullyAmountChargedInTicketIsCorrect
 	cart add: secondBook times: 5. 
 	self assert: ((cashier charge: cart to: creditCard) total) equals: ((3 * valuator at: book) + (5 * valuator at: secondBook)).! !
 
-!TestTusLibros methodsFor: 'Cashier' stamp: 'kl 10/30/2017 21:20:31'!
+!TestTusLibros methodsFor: 'Cashier' stamp: 'kl 11/2/2017 19:03:41'!
 test11OnCartCheckoutSaleIsStoredInSalesBook
 	| ticket |
 	cart add: secondBook times: 5. 
 	ticket _ cashier charge: cart to: creditCard.
 	self assert: (salesBook includes: ticket).
 	
-	"Stolen card"
-	"Card with no credit"
-	"Transaction ok"
-	"When there is a problem with the credit card, there was no comunication"
+		"When there is a problem with the credit card, there was no comunication"
 	! !
 
 
-!TestTusLibros methodsFor: 'MerchantProcessorInterface' stamp: 'kl 10/30/2017 21:47:43'!
+!TestTusLibros methodsFor: 'MerchantProcessorInterface' stamp: 'kl 11/2/2017 18:28:12'!
 test12CantCheckoutWithStolenCreditCard
 	cart add: secondBook times: 5.
 	
-	self changeMerchantProcessorClosure: [self error: 'Stolen Credit Card'].
+	self changeMerchantProcessorClosure: [:anAmount :aCreditCard | self error: Cashier stolenCreditCardErrorMessage].
 	
 	self should: [cashier charge: cart to: creditCard.] 
 		 raise: Error
 		withExceptionDo: [:anError |
-			self assert: (anError messageText) equals: 'Stolen Credit Card'
+			self assert: (anError messageText) equals: (Cashier stolenCreditCardErrorMessage).
+			self assert: salesBook isEmpty.
 		].
 			
 	
+	! !
+
+!TestTusLibros methodsFor: 'MerchantProcessorInterface' stamp: 'kl 11/2/2017 18:32:18'!
+test13CantCheckoutWithNoCashCreditCard
+	cart add: secondBook times: 5.
+	
+	self changeMerchantProcessorClosure: [:anAmount :aCreditCard | self error: Cashier noFoundsCreditCardErrorMessage].
+	
+	self should: [cashier charge: cart to: creditCard.] 
+		 raise: Error
+		withExceptionDo: [:anError |
+			self assert: (anError messageText) equals: (Cashier noFoundsCreditCardErrorMessage).
+			self assert: salesBook isEmpty.
+		].
+			
+	
+	! !
+
+!TestTusLibros methodsFor: 'MerchantProcessorInterface' stamp: 'kl 11/2/2017 19:03:28'!
+test14WhenCheckingOutAmounAndCreditCardAreCorrect
+	|usedCreditCard amountInTIcket ticket|
+	cart add: secondBook times: 5.
+	
+	self changeMerchantProcessorClosure: [:anAmount :aCreditCard | 
+		usedCreditCard := aCreditCard.
+		amountInTIcket := anAmount.
+	].
+	
+	ticket := cashier charge: cart to: creditCard.
+	self assert: usedCreditCard equals: (creditCard).
+	self assert: amountInTIcket equals: (ticket total).
+
+"Si mantenemos que hay un cajero persona entonces agregar test donde el closure tenga [self fail]"
+
+"Dummy son aquellos que no son relevantes para el test y los creo nada mas porque se necesitan"
+"Stub son los que configuro con respuestas predefinidas para comprobar que se esta testeando "		
+"Mock es para ver como se colaboro con ellos. no hace falta configurarlos. Son tests de caja blanca y son fragiles ante cambios. Es mejor tener factories de objetos que son utilizados en los tests."
+"Proveen la misma funcionalidad pero mas light. BD en memoria por ejemplo"
+
+"Hoy Mockito usa mezcla entre stubs y mocks."
+"Usar los simuladores para que el test este en control de todo y para representar todo aquello que este externo al modelo."! !
+
+
+!TestTusLibros methodsFor: 'ExternalInterface' stamp: 'kl 11/2/2017 20:47:17'!
+test15CantCreateCartWithInvalidUser
+	self
+		should: [CartInterface new createCartFor: 'Brian' withPassword: 'Brianesco'.]
+		raise: Error
+		withExceptionDo: [:anError | 
+			self assert: (anError messageText) equals: CartInterface invalidUserErrorMessage.
+			
+		]
+
+	! !
+
+!TestTusLibros methodsFor: 'ExternalInterface' stamp: 'kl 11/2/2017 20:49:59'!
+test16AfterCreatingaCartByTheInterfaceItIsEmpty
+	| id |
+	id _ CartInterface new createCartFor: 'Pepe' withPassword: 'Pepito'.
+	self assert: (CartInterface listCartWithId: id) equals: (OrderedCollection new).
 	! !
 
 
@@ -138,9 +196,9 @@ test12CantCheckoutWithStolenCreditCard
 changeMerchantProcessorClosure: aBlockClosure 
 	merchantProcessorClosure _ aBlockClosure .! !
 
-!TestTusLibros methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 21:44:29'!
-debit: anAmount to: aCreditCard
-	merchantProcessorClosure value.! !
+!TestTusLibros methodsFor: 'as yet unclassified' stamp: 'kl 11/2/2017 18:25:48'!
+debit: anAmount from: aCreditCard
+	^ merchantProcessorClosure value: anAmount value: aCreditCard.! !
 
 
 !classDefinition: #Cart category: #TusLibros!
@@ -164,6 +222,10 @@ add: aProduct times: numberOfTimes
 			self error: Cart numberNotNaturalErrorMessage.
 			] ] ifFalse:
 		[self error: Cart productNotInCatalogueErrorMessage]. ! !
+
+!Cart methodsFor: 'as yet unclassified' stamp: 'kl 11/2/2017 20:23:47'!
+costBasedOn: aValuator
+	^ (products collect: [:aProduct | aValuator value: aProduct]) sum.! !
 
 !Cart methodsFor: 'as yet unclassified' stamp: 'LJ 10/28/2017 17:29:38'!
 initialize
@@ -208,6 +270,34 @@ withCatalogue: aCatalogue
 	^ self new initializeWithCatalogue: aCatalogue.! !
 
 
+!classDefinition: #CartInterface category: #TusLibros!
+Object subclass: #CartInterface
+	instanceVariableNames: 'verificator'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'TusLibros'!
+
+!CartInterface methodsFor: 'as yet unclassified' stamp: 'kl 11/2/2017 20:45:36'!
+createCartFor: aUser withPassword: aPassword
+	self verifyUser: aUser withPassword: aPassword.
+! !
+
+!CartInterface methodsFor: 'as yet unclassified' stamp: 'kl 11/2/2017 20:55:05'!
+verifyUser: aUser withPassword: aPassword
+	((verificator includes: aUser) and: ((verificator at: aUser) = aPassword)) ifTrue: [^ self.].
+	self error: CartInterface invalidUserErrorMessage.! !
+
+"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
+
+!classDefinition: 'CartInterface class' category: #TusLibros!
+CartInterface class
+	instanceVariableNames: ''!
+
+!CartInterface class methodsFor: 'as yet unclassified' stamp: 'kl 11/2/2017 20:43:38'!
+invalidUserErrorMessage
+	^ 'Invalid user'! !
+
+
 !classDefinition: #Cashier category: #TusLibros!
 Object subclass: #Cashier
 	instanceVariableNames: 'valuator salesBook merchantProcessor'
@@ -215,25 +305,24 @@ Object subclass: #Cashier
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!Cashier methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 21:42:28'!
+!Cashier methodsFor: 'as yet unclassified' stamp: 'kl 11/2/2017 20:20:22'!
 charge: aCart to: aCreditCard
-	| ticket |
+	| ticket total|
 	aCart isEmpty ifTrue: [self error: Cashier emptyCartErrorMessage].
 	(aCreditCard isExpiredOn: GregorianMonthOfYear current) ifTrue: [self error: Cashier expiratedCreditCardErrorMessage.].
+	total _ aCart costBasedOn: valuator.
+	self debit: total from: aCreditCard.
 	ticket _ self makeTicketFor: aCart.
-	merchantProcessor debit: (ticket total) to: aCreditCard.
-	^ salesBook add: ticket.
-	! !
+	^ salesBook add: ticket.! !
 
-!Cashier methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 19:20:22'!
+!Cashier methodsFor: 'as yet unclassified' stamp: 'kl 11/2/2017 20:21:08'!
+debit: aTotal from: aCreditCard
+  merchantProcessor debit: aTotal from: aCreditCard.
+! !
+
+!Cashier methodsFor: 'as yet unclassified' stamp: 'kl 11/2/2017 20:25:26'!
 makeTicketFor: aCart 
-	^ Ticket with: ( (aCart uniqueProducts collect: [:aProduct | TicketItem for: aProduct withPrice: (valuator at: aProduct) withAmount: (aCart occurrencesOf: aProduct)])).! !
-
-!Cashier methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 21:41:17'!
-with: aValuator on: aSalesBook
-	valuator := aValuator.
-	salesBook _ aSalesBook.
-	merchantProcessor _ self.! !
+	^ Ticket with: ( (aCart uniqueProducts collect: [:aProduct | TicketItem for: aProduct withPrice: (valuator value: aProduct) withAmount: (aCart occurrencesOf: aProduct)])).! !
 
 !Cashier methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 21:40:45'!
 with: aValuator on: aSalesBook withMerchantProcessor: aMerchantProcessor
@@ -255,9 +344,13 @@ emptyCartErrorMessage
 expiratedCreditCardErrorMessage
 	^ 'Credit card must not be expired'.! !
 
-!Cashier class methodsFor: 'error handling' stamp: 'kl 10/30/2017 20:46:13'!
-with: aValuator on: aSalesBook
-	^ self new with: aValuator on: aSalesBook.! !
+!Cashier class methodsFor: 'error handling' stamp: 'kl 11/2/2017 18:32:03'!
+noFoundsCreditCardErrorMessage
+	^ 'Credit Card with no founds'! !
+
+!Cashier class methodsFor: 'error handling' stamp: 'kl 11/2/2017 18:31:01'!
+stolenCreditCardErrorMessage
+	^ 'Stolen credit card'.! !
 
 !Cashier class methodsFor: 'error handling' stamp: 'kl 10/30/2017 21:40:25'!
 with: aValuator on: aSalesBook withMerchantProcessor: aMerchantProcessor
