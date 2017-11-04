@@ -57,7 +57,7 @@ test07WhenAddingANotNaturalNumberOfItemsToTheCartThrowsIncorrectNumberErrorAndRe
 	! !
 
 
-!TestTusLibros methodsFor: 'Setup' stamp: 'LJ 11/4/2017 11:36:18'!
+!TestTusLibros methodsFor: 'Setup' stamp: 'LJ 11/4/2017 12:08:36'!
 setUp
 	book _'1'.
 	secondBook _ '2'.
@@ -76,7 +76,7 @@ setUp
 	
 	merchantProcessorClosure _ [:anAmount :aCreditCard |].
 	
-	restInterface _ RestInterface withUsers: (Dictionary newFromPairs: {'Pepe'. 'Pepito'}) andCatalogue: catalogue.! !
+	restInterface _ RestInterface withUsers: (Dictionary newFromPairs: {'Pepe'. 'Pepito'}) cashier: cashier andCatalogue: catalogue.! !
 
 
 !TestTusLibros methodsFor: 'Cashier' stamp: 'kl 10/30/2017 20:50:27'!
@@ -252,6 +252,55 @@ test21CannotAddProductNotInCatalogueToACart
 				assert: anError messageText
 				equals: RestInterface productNotInCatalogueErrorMessage ].! !
 
+!TestTusLibros methodsFor: 'RestInterface' stamp: 'LJ 11/4/2017 12:22:31'!
+test22WhenCheckingOutInexistentCartErrorMessageIsThrown
+	self
+		should: [ restInterface checkout: 'InvalidCartId' withCreditCard: creditCard.]
+		raise: Error
+		withExceptionDo: [ :anError |
+			self
+				assert: anError messageText
+				equals: RestInterface invalidCartIdErrorMessage ].! !
+
+!TestTusLibros methodsFor: 'RestInterface' stamp: 'LJ 11/4/2017 12:18:56'!
+test23WhenCheckingOutEmptyCartErrorMessageIsThrown
+	| id |
+	id _ restInterface 
+		createCartFor: 'Pepe'
+		withPassword: 'Pepito'.
+	self
+		should: [ restInterface checkout: id withCreditCard: creditCard.]
+		raise: Error
+		withExceptionDo: [ :anError |
+			self
+				assert: anError messageText
+				equals: RestInterface emptyCartErrorMessage ].! !
+
+!TestTusLibros methodsFor: 'RestInterface' stamp: 'LJ 11/4/2017 12:20:39'!
+test24WhenCheckingOutCartToExpiredCardErrorMessageIsThrown
+	| id |
+	id _ restInterface 
+		createCartFor: 'Pepe'
+		withPassword: 'Pepito'.
+	restInterface addToCart: id aProduct: book times: 1.
+	self
+		should: [ restInterface checkout: id withCreditCard: expiredCreditCard .]
+		raise: Error
+		withExceptionDo: [ :anError |
+			self
+				assert: anError messageText
+				equals: RestInterface expiratedCreditCardErrorMessage ].! !
+
+!TestTusLibros methodsFor: 'RestInterface' stamp: 'LJ 11/4/2017 12:16:22'!
+test25CheckingOutACart
+	| id |
+	id _ restInterface 
+		createCartFor: 'Pepe'
+		withPassword: 'Pepito'.
+	restInterface addToCart: id aProduct: book times: 1.
+	restInterface addToCart: id aProduct: secondBook times: 2.
+	! !
+
 
 !TestTusLibros methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 21:43:48'!
 changeMerchantProcessorClosure: aBlockClosure 
@@ -425,16 +474,18 @@ for: aPerson withNumber: aNumber andExpirationDate: anExpirationDate
 
 !classDefinition: #RestInterface category: #TusLibros!
 Object subclass: #RestInterface
-	instanceVariableNames: 'users carts catalogue'
+	instanceVariableNames: 'users carts catalogue cashier'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!RestInterface methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 11:51:10'!
+!RestInterface methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 12:06:44'!
 addToCart: aCartId aProduct: aProduct times: aNumberOfTimes 
-	| cart |
-	cart _ self verifyItExists: aCartId.
-	cart add: aProduct times: aNumberOfTimes.! !
+	(self verifyItExists: aCartId) add: aProduct times: aNumberOfTimes.! !
+
+!RestInterface methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 12:10:42'!
+checkout: aCartId withCreditCard: aCreditCard
+	cashier charge: (self verifyItExists: aCartId) to: aCreditCard.! !
 
 !RestInterface methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 11:35:22'!
 createCartFor: aUser withPassword: aPassword
@@ -464,18 +515,26 @@ verifyUser: aUser withPassword: aPassword
 	aPassword = (users at: aUser) ifFalse: [ self error: RestInterface invalidUserErrorMessage ].! !
 
 
-!RestInterface methodsFor: 'initialization' stamp: 'LJ 11/4/2017 11:36:51'!
-withUsers: validUsers andCatalogue: aCatalogue
+!RestInterface methodsFor: 'initialization' stamp: 'LJ 11/4/2017 12:09:31'!
+withUsers: validUsers cashier: aCashier andCatalogue: aCatalogue
 	users _ validUsers.
 	carts _ Dictionary new.
 	catalogue _ aCatalogue.
-	! !
+	cashier _ aCashier.	! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
 !classDefinition: 'RestInterface class' category: #TusLibros!
 RestInterface class
 	instanceVariableNames: 'carts'!
+
+!RestInterface class methodsFor: 'Error messages' stamp: 'LJ 11/4/2017 12:17:56'!
+emptyCartErrorMessage
+	^ Cashier emptyCartErrorMessage .! !
+
+!RestInterface class methodsFor: 'Error messages' stamp: 'LJ 11/4/2017 12:19:50'!
+expiratedCreditCardErrorMessage
+	^ Cashier expiratedCreditCardErrorMessage .! !
 
 !RestInterface class methodsFor: 'Error messages' stamp: 'LJ 11/4/2017 11:11:04'!
 invalidCartIdErrorMessage
@@ -490,9 +549,9 @@ productNotInCatalogueErrorMessage
 	^ Cart productNotInCatalogueErrorMessage.! !
 
 
-!RestInterface class methodsFor: 'initialization' stamp: 'LJ 11/4/2017 11:35:58'!
-withUsers: validUsers andCatalogue: aCatalogue
-	^ self new withUsers: validUsers andCatalogue: aCatalogue.! !
+!RestInterface class methodsFor: 'initialization' stamp: 'LJ 11/4/2017 12:09:07'!
+withUsers: validUsers cashier: aCashier andCatalogue: aCatalogue
+	^ self new withUsers: validUsers cashier: aCashier andCatalogue: aCatalogue.! !
 
 
 !classDefinition: #Ticket category: #TusLibros!
