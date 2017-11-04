@@ -117,6 +117,14 @@ test11OnCartCheckoutSaleIsStoredInSalesBook
 	! !
 
 
+!TestTusLibros methodsFor: 'MerchantProcessorInterface' stamp: 'kl 10/30/2017 21:43:48'!
+changeMerchantProcessorClosure: aBlockClosure 
+	merchantProcessorClosure _ aBlockClosure .! !
+
+!TestTusLibros methodsFor: 'MerchantProcessorInterface' stamp: 'kl 11/2/2017 18:25:48'!
+debit: anAmount from: aCreditCard
+	^ merchantProcessorClosure value: anAmount value: aCreditCard.! !
+
 !TestTusLibros methodsFor: 'MerchantProcessorInterface' stamp: 'kl 11/2/2017 18:28:12'!
 test12CantCheckoutWithStolenCreditCard
 	cart add: secondBook times: 5.
@@ -174,8 +182,8 @@ test14WhenCheckingOutAmounAndCreditCardAreCorrect
 "Usar los simuladores para que el test este en control de todo y para representar todo aquello que este externo al modelo."! !
 
 
-!TestTusLibros methodsFor: 'RestInterface' stamp: 'LJ 11/4/2017 11:53:25'!
-test15CantCreateCartWithInvalidUser
+!TestTusLibros methodsFor: 'RestInterface' stamp: 'LJ 11/4/2017 12:27:47'!
+test15CannotCreateCartWithInvalidUser
 	self
 		should: [
 			restInterface 
@@ -291,24 +299,42 @@ test24WhenCheckingOutCartToExpiredCardErrorMessageIsThrown
 				assert: anError messageText
 				equals: RestInterface expiratedCreditCardErrorMessage ].! !
 
-!TestTusLibros methodsFor: 'RestInterface' stamp: 'LJ 11/4/2017 12:16:22'!
-test25CheckingOutACart
+!TestTusLibros methodsFor: 'RestInterface' stamp: 'LJ 11/4/2017 12:27:36'!
+test26CannotListPurchasesWithInvalidUser
+	self
+		should: [
+			restInterface 
+				listPurchasesFor: 'Brian'
+				withPassword: 'Brianesco' ]
+		raise: Error
+		withExceptionDo: [ :anError |
+			self
+				assert: anError messageText
+				equals: RestInterface invalidUserErrorMessage ].
+	
+	self
+		should: [
+			restInterface 
+				listPurchasesFor: 'Pepe'
+				withPassword: 'Brianesco' ]
+		raise: Error
+		withExceptionDo: [ :anError |
+			self
+				assert: anError messageText
+				equals: RestInterface invalidUserErrorMessage ].! !
+
+!TestTusLibros methodsFor: 'RestInterface' stamp: 'LJ 11/4/2017 13:01:52'!
+test27ListPurchasesForAValidUser
 	| id |
 	id _ restInterface 
 		createCartFor: 'Pepe'
 		withPassword: 'Pepito'.
 	restInterface addToCart: id aProduct: book times: 1.
 	restInterface addToCart: id aProduct: secondBook times: 2.
-	! !
-
-
-!TestTusLibros methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 21:43:48'!
-changeMerchantProcessorClosure: aBlockClosure 
-	merchantProcessorClosure _ aBlockClosure .! !
-
-!TestTusLibros methodsFor: 'as yet unclassified' stamp: 'kl 11/2/2017 18:25:48'!
-debit: anAmount from: aCreditCard
-	^ merchantProcessorClosure value: anAmount value: aCreditCard.! !
+	restInterface checkout: id withCreditCard: creditCard.
+	restInterface 
+		listPurchasesFor: 'Pepe'
+		withPassword: 'Pepito'.! !
 
 
 !classDefinition: #Cart category: #TusLibros!
@@ -391,7 +417,7 @@ Object subclass: #Cashier
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!Cashier methodsFor: 'as yet unclassified' stamp: 'kl 11/2/2017 20:20:22'!
+!Cashier methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 13:17:20'!
 charge: aCart to: aCreditCard
 	| ticket total|
 	aCart isEmpty ifTrue: [self error: Cashier emptyCartErrorMessage].
@@ -399,7 +425,7 @@ charge: aCart to: aCreditCard
 	total _ aCart costBasedOn: valuator.
 	self debit: total from: aCreditCard.
 	ticket _ self makeTicketFor: aCart.
-	^ salesBook add: ticket.! !
+	^ salesBook add: (Sale with: ticket for: aCreditCard owner).! !
 
 !Cashier methodsFor: 'as yet unclassified' stamp: 'kl 11/2/2017 20:21:08'!
 debit: aTotal from: aCreditCard
@@ -461,6 +487,10 @@ for: aPerson withNumber: aNumber andExpirationDate: anExpirationDate "	(aPerson
 isExpiredOn: aDate
 	^ expirationDate < aDate.! !
 
+!CreditCard methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 13:16:39'!
+owner
+	^ person.! !
+
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
 !classDefinition: 'CreditCard class' category: #TusLibros!
@@ -499,6 +529,10 @@ createCartFor: aUser withPassword: aPassword
 listCartWithId: aCartId 
 	^ (self verifyItExists: aCartId) products.
 	! !
+
+!RestInterface methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 12:25:30'!
+listPurchasesFor: aUser withPassword: aPassword
+	self verifyUser: aUser withPassword: aPassword.! !
 
 !RestInterface methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 11:25:25'!
 newCartId
@@ -552,6 +586,33 @@ productNotInCatalogueErrorMessage
 !RestInterface class methodsFor: 'initialization' stamp: 'LJ 11/4/2017 12:09:07'!
 withUsers: validUsers cashier: aCashier andCatalogue: aCatalogue
 	^ self new withUsers: validUsers cashier: aCashier andCatalogue: aCatalogue.! !
+
+
+!classDefinition: #Sale category: #TusLibros!
+Object subclass: #Sale
+	instanceVariableNames: 'ticket person'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'TusLibros'!
+
+!Sale methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 13:19:08'!
+saledTo: aPerson
+	^ person = aPerson.! !
+
+!Sale methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 13:18:27'!
+with: aTicket for: aPerson
+	ticket _ aTicket.
+	person _ aPerson.! !
+
+"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
+
+!classDefinition: 'Sale class' category: #TusLibros!
+Sale class
+	instanceVariableNames: ''!
+
+!Sale class methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 13:18:04'!
+with: aTicket for: aPerson
+	self new with: aTicket for: aPerson.! !
 
 
 !classDefinition: #Ticket category: #TusLibros!
