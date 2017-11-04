@@ -1,6 +1,6 @@
 !classDefinition: #TestTusLibros category: #TusLibros!
 TestCase subclass: #TestTusLibros
-	instanceVariableNames: 'cart book anotherEditorialBook catalogue secondBook cashier expiredCreditCard creditCard valuator currentMonthYear salesBook merchantProcessorClosure'
+	instanceVariableNames: 'cart book anotherEditorialBook catalogue secondBook cashier expiredCreditCard creditCard valuator currentMonthYear salesBook merchantProcessorClosure restInterface'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'TusLibros'!
@@ -57,7 +57,7 @@ test07WhenAddingANotNaturalNumberOfItemsToTheCartThrowsIncorrectNumberErrorAndRe
 	! !
 
 
-!TestTusLibros methodsFor: 'Setup' stamp: 'kl 11/2/2017 20:23:01'!
+!TestTusLibros methodsFor: 'Setup' stamp: 'LJ 11/4/2017 11:36:18'!
 setUp
 	book _'1'.
 	secondBook _ '2'.
@@ -74,7 +74,9 @@ setUp
 	
 	cashier _ Cashier with: [:aProduct | valuator at: aProduct] on: (salesBook) withMerchantProcessor: self.
 	
-	merchantProcessorClosure _ [:anAmount :aCreditCard |].! !
+	merchantProcessorClosure _ [:anAmount :aCreditCard |].
+	
+	restInterface _ RestInterface withUsers: (Dictionary newFromPairs: {'Pepe'. 'Pepito'}) andCatalogue: catalogue.! !
 
 
 !TestTusLibros methodsFor: 'Cashier' stamp: 'kl 10/30/2017 20:50:27'!
@@ -172,24 +174,83 @@ test14WhenCheckingOutAmounAndCreditCardAreCorrect
 "Usar los simuladores para que el test este en control de todo y para representar todo aquello que este externo al modelo."! !
 
 
-!TestTusLibros methodsFor: 'ExternalInterface' stamp: 'kl 11/2/2017 20:47:17'!
+!TestTusLibros methodsFor: 'RestInterface' stamp: 'LJ 11/4/2017 11:53:25'!
 test15CantCreateCartWithInvalidUser
 	self
-		should: [CartInterface new createCartFor: 'Brian' withPassword: 'Brianesco'.]
+		should: [
+			restInterface 
+				createCartFor: 'Brian'
+				withPassword: 'Brianesco' ]
 		raise: Error
-		withExceptionDo: [:anError | 
-			self assert: (anError messageText) equals: CartInterface invalidUserErrorMessage.
-			
-		]
+		withExceptionDo: [ :anError |
+			self
+				assert: anError messageText
+				equals: RestInterface invalidUserErrorMessage ].
+	
+	self
+		should: [
+			restInterface 
+				createCartFor: 'Pepe'
+				withPassword: 'Brianesco' ]
+		raise: Error
+		withExceptionDo: [ :anError |
+			self
+				assert: anError messageText
+				equals: RestInterface invalidUserErrorMessage ].! !
 
-	! !
-
-!TestTusLibros methodsFor: 'ExternalInterface' stamp: 'kl 11/2/2017 20:49:59'!
-test16AfterCreatingaCartByTheInterfaceItIsEmpty
+!TestTusLibros methodsFor: 'RestInterface' stamp: 'LJ 11/4/2017 11:39:26'!
+test16AfterCreatingaCartItIsEmpty
 	| id |
-	id _ CartInterface new createCartFor: 'Pepe' withPassword: 'Pepito'.
-	self assert: (CartInterface listCartWithId: id) equals: (OrderedCollection new).
+	id _ restInterface 
+		createCartFor: 'Pepe'
+		withPassword: 'Pepito'.
+	self
+		assert: (restInterface listCartWithId: id)
+		equals: Bag new.! !
+
+!TestTusLibros methodsFor: 'RestInterface' stamp: 'LJ 11/4/2017 11:17:55'!
+test18CannotListAnInexistentCart
+	self
+		should: [restInterface listCartWithId: 'InvalidId']
+		raise: Error
+		withExceptionDo: [ :anError | 
+			self assert: anError messageText = RestInterface invalidCartIdErrorMessage].! !
+
+!TestTusLibros methodsFor: 'RestInterface' stamp: 'LJ 11/4/2017 11:25:36'!
+test19CannotAddAProductToAnInexistentCart
+	self
+		should: [restInterface addToCart: 'InvalidId' aProduct: book times: 1]
+		raise: Error
+		withExceptionDo: [ :anError | 
+			self assert: anError messageText = RestInterface invalidCartIdErrorMessage].! !
+
+!TestTusLibros methodsFor: 'RestInterface' stamp: 'LJ 11/4/2017 11:39:09'!
+test20AddingAProductToACartMakesItIsNotEmptyAnyMore
+	| id |
+	id _ restInterface 
+		createCartFor: 'Pepe'
+		withPassword: 'Pepito'.
+	restInterface addToCart: id aProduct: book times: 1.
+	restInterface addToCart: id aProduct: secondBook times: 2.
+
+	self assert: (((restInterface listCartWithId: id) occurrencesOf: book) = 1).
+	self assert: (((restInterface listCartWithId: id) occurrencesOf: secondBook) = 2).
 	! !
+
+!TestTusLibros methodsFor: 'RestInterface' stamp: 'LJ 11/4/2017 11:47:57'!
+test21CannotAddProductNotInCatalogueToACart
+	| id |
+	id _ restInterface 
+		createCartFor: 'Pepe'
+		withPassword: 'Pepito'.
+	
+	self
+		should: [ restInterface addToCart: id aProduct: anotherEditorialBook times: 1. ]
+		raise: Error
+		withExceptionDo: [ :anError |
+			self
+				assert: anError messageText
+				equals: RestInterface productNotInCatalogueErrorMessage ].! !
 
 
 !TestTusLibros methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 21:43:48'!
@@ -243,6 +304,10 @@ isEmpty
 occurrencesOf: aProduct
 	^ products occurrencesOf: aProduct.! !
 
+!Cart methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 11:32:03'!
+products
+	^ products copy.! !
+
 !Cart methodsFor: 'as yet unclassified' stamp: 'kl 10/26/2017 21:06:27'!
 size
 	^ products size.! !
@@ -268,34 +333,6 @@ productNotInCatalogueErrorMessage
 !Cart class methodsFor: 'as yet unclassified' stamp: 'kl 10/26/2017 20:01:39'!
 withCatalogue: aCatalogue
 	^ self new initializeWithCatalogue: aCatalogue.! !
-
-
-!classDefinition: #CartInterface category: #TusLibros!
-Object subclass: #CartInterface
-	instanceVariableNames: 'verificator'
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'TusLibros'!
-
-!CartInterface methodsFor: 'as yet unclassified' stamp: 'kl 11/2/2017 20:45:36'!
-createCartFor: aUser withPassword: aPassword
-	self verifyUser: aUser withPassword: aPassword.
-! !
-
-!CartInterface methodsFor: 'as yet unclassified' stamp: 'kl 11/2/2017 20:55:05'!
-verifyUser: aUser withPassword: aPassword
-	((verificator includes: aUser) and: ((verificator at: aUser) = aPassword)) ifTrue: [^ self.].
-	self error: CartInterface invalidUserErrorMessage.! !
-
-"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
-
-!classDefinition: 'CartInterface class' category: #TusLibros!
-CartInterface class
-	instanceVariableNames: ''!
-
-!CartInterface class methodsFor: 'as yet unclassified' stamp: 'kl 11/2/2017 20:43:38'!
-invalidUserErrorMessage
-	^ 'Invalid user'! !
 
 
 !classDefinition: #Cashier category: #TusLibros!
@@ -384,6 +421,78 @@ CreditCard class
 !CreditCard class methodsFor: 'class initialization' stamp: 'LJ 10/28/2017 18:09:34'!
 for: aPerson withNumber: aNumber andExpirationDate: anExpirationDate 
 	^ self new for: aPerson withNumber: aNumber andExpirationDate: anExpirationDate.! !
+
+
+!classDefinition: #RestInterface category: #TusLibros!
+Object subclass: #RestInterface
+	instanceVariableNames: 'users carts catalogue'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'TusLibros'!
+
+!RestInterface methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 11:51:10'!
+addToCart: aCartId aProduct: aProduct times: aNumberOfTimes 
+	| cart |
+	cart _ self verifyItExists: aCartId.
+	cart add: aProduct times: aNumberOfTimes.! !
+
+!RestInterface methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 11:35:22'!
+createCartFor: aUser withPassword: aPassword
+	| aCartId |
+	self verifyUser: aUser withPassword: aPassword.
+	aCartId _ self newCartId.
+	carts at: (aCartId) put: (Cart withCatalogue: catalogue).
+	^ aCartId.! !
+
+!RestInterface methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 11:33:05'!
+listCartWithId: aCartId 
+	^ (self verifyItExists: aCartId) products.
+	! !
+
+!RestInterface methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 11:25:25'!
+newCartId
+	^ LaggedFibonacciRandom new next.! !
+
+!RestInterface methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 11:29:42'!
+verifyItExists: aCartId
+	carts at: aCartId  ifAbsent: [self error: RestInterface invalidCartIdErrorMessage].
+	^ carts at: aCartId.! !
+
+!RestInterface methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 11:04:49'!
+verifyUser: aUser withPassword: aPassword
+	users at: aUser ifAbsent: [ self error: RestInterface invalidUserErrorMessage ].
+	aPassword = (users at: aUser) ifFalse: [ self error: RestInterface invalidUserErrorMessage ].! !
+
+
+!RestInterface methodsFor: 'initialization' stamp: 'LJ 11/4/2017 11:36:51'!
+withUsers: validUsers andCatalogue: aCatalogue
+	users _ validUsers.
+	carts _ Dictionary new.
+	catalogue _ aCatalogue.
+	! !
+
+"-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
+
+!classDefinition: 'RestInterface class' category: #TusLibros!
+RestInterface class
+	instanceVariableNames: 'carts'!
+
+!RestInterface class methodsFor: 'Error messages' stamp: 'LJ 11/4/2017 11:11:04'!
+invalidCartIdErrorMessage
+	^ 'Cart not present'! !
+
+!RestInterface class methodsFor: 'Error messages' stamp: 'kl 11/2/2017 20:43:38'!
+invalidUserErrorMessage
+	^ 'Invalid user'! !
+
+!RestInterface class methodsFor: 'Error messages' stamp: 'LJ 11/4/2017 11:52:04'!
+productNotInCatalogueErrorMessage
+	^ Cart productNotInCatalogueErrorMessage.! !
+
+
+!RestInterface class methodsFor: 'initialization' stamp: 'LJ 11/4/2017 11:35:58'!
+withUsers: validUsers andCatalogue: aCatalogue
+	^ self new withUsers: validUsers andCatalogue: aCatalogue.! !
 
 
 !classDefinition: #Ticket category: #TusLibros!
