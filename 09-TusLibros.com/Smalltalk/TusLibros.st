@@ -5,11 +5,11 @@ TestCase subclass: #TestTusLibros
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!TestTusLibros methodsFor: 'Cart' stamp: 'kl 10/26/2017 21:25:38'!
+!TestTusLibros methodsFor: 'Cart' stamp: 'LJ 10/26/2017 21:25:38'!
 test01WhenCreatingACartItIsEmpty
 	self assert: cart isEmpty.! !
 
-!TestTusLibros methodsFor: 'Cart' stamp: 'kl 10/26/2017 21:26:24'!
+!TestTusLibros methodsFor: 'Cart' stamp: 'LJ 10/26/2017 21:26:24'!
 test02WhenAddingAProductToACartItIsNotEmpty
 	cart add: book.
 	self deny: cart isEmpty.! !
@@ -25,13 +25,13 @@ test03WhenAddingABookFromAnotherEditorialToACartItThrowsNotInCatalogueErrorAndRe
 		]
 	! !
 
-!TestTusLibros methodsFor: 'Cart' stamp: 'kl 10/26/2017 21:27:54'!
+!TestTusLibros methodsFor: 'Cart' stamp: 'LJ 10/26/2017 21:27:54'!
 test04WhenAddingTwiceTheSameBookToACartItsSizeIsTwo
 	cart add: book.
 	cart add: book.
 	self assert: (cart size) equals: 2.! !
 
-!TestTusLibros methodsFor: 'Cart' stamp: 'kl 10/30/2017 19:08:22'!
+!TestTusLibros methodsFor: 'Cart' stamp: 'LJ 10/30/2017 19:08:22'!
 test06CartListOfProductsEqualsBooksAdded
 	cart add: book times: 10.
 	cart add: secondBook.
@@ -40,7 +40,7 @@ test06CartListOfProductsEqualsBooksAdded
 	self assert: (cart occurrencesOf: secondBook) equals: 1.
 ! !
 
-!TestTusLibros methodsFor: 'Cart' stamp: 'kl 10/30/2017 18:58:58'!
+!TestTusLibros methodsFor: 'Cart' stamp: 'LJ 10/30/2017 18:58:58'!
 test07WhenAddingANotNaturalNumberOfItemsToTheCartThrowsIncorrectNumberErrorAndRemainsEmpty
 	
 	|notNaturalNumbers|
@@ -58,9 +58,8 @@ test07WhenAddingANotNaturalNumberOfItemsToTheCartThrowsIncorrectNumberErrorAndRe
 	! !
 
 
-!TestTusLibros methodsFor: 'Setup' stamp: 'LJ 11/4/2017 23:06:51'!
+!TestTusLibros methodsFor: 'Setup' stamp: 'LJ 11/5/2017 10:00:22'!
 setUp
-	|priceBook|
 	
 	testObjectFactory _ TestObjectFactory new.
 	book _ testObjectFactory bookFromEditorial.
@@ -72,8 +71,8 @@ setUp
 	currentMonthYear := GregorianMonthOfYear current.
 	expiredCreditCard _ testObjectFactory expiredCreditCardFor: 'Pepe'.
 	creditCard _ testObjectFactory notExpiredCreditCardFor: 'Pepe'.
-	priceBook _ testObjectFactory priceBook.
-	priceValuator _ [:aProduct | priceBook at: aProduct].
+
+	priceValuator _ [:aProduct | testObjectFactory priceBook at: aProduct].
 	
 	salesBook _ OrderedCollection new.
 	
@@ -86,61 +85,61 @@ setUp
 	restInterface _ RestInterface withUsers: (self validUsersAndPasswords)  withMerchantProcessor: self  withSalesBook: salesBook  withCatalogue: catalogue  withPriceValuator: priceValuator withTimer: timer.! !
 
 
-!TestTusLibros methodsFor: 'Cashier' stamp: 'LJ 11/4/2017 23:59:40'!
+!TestTusLibros methodsFor: 'Cashier' stamp: 'LJ 11/5/2017 09:43:40'!
 test08WhenCheckingOutEmptyCartErrorMessageIsThrown
 	self
-		should: [cashier charge: cart to: creditCard withUser: creditCard owner]
+		should: [cashier charge: cart to: (creditCard owner) with: creditCard]
 		raise: Error
 		withExceptionDo: [:anError | 
 			self assert: (anError messageText) equals: Cashier emptyCartErrorMessage.
 			self assert: salesBook isEmpty.
 		]! !
 
-!TestTusLibros methodsFor: 'Cashier' stamp: 'LJ 11/5/2017 00:00:12'!
+!TestTusLibros methodsFor: 'Cashier' stamp: 'LJ 11/5/2017 09:43:57'!
 test09WhenCheckingOutCartToExpiredCardErrorMessageIsThrown
 	cart add: book.
 	self
-		should: [cashier charge: cart to: expiredCreditCard  withUser: expiredCreditCard owner]
+		should: [cashier charge: cart to: expiredCreditCard owner with: expiredCreditCard]
 		raise: Error
 		withExceptionDo: [:anError | 
 			self assert: (anError messageText) equals: Cashier expiratedCreditCardErrorMessage.
 			self assert: salesBook isEmpty.
 		]! !
 
-!TestTusLibros methodsFor: 'Cashier' stamp: 'LJ 11/5/2017 01:45:06'!
+!TestTusLibros methodsFor: 'Cashier' stamp: 'LJ 11/5/2017 09:44:19'!
 test10WhenCheckingOutSuccessfullyAmountChargedInTicketIsCorrect
 	|ticket|
 	cart add: book times: 1.
 	cart add: secondBook times: 2.
 	 
-	ticket _  cashier charge: cart to: creditCard  withUser: creditCard owner.
+	ticket _  cashier charge: cart to: creditCard owner with: creditCard.
 	self assert: (ticket items size) equals: 2.
 	self assert: (ticket total) equals: ((1 * (priceValuator value: book)) + (2 * (priceValuator value: secondBook))).! !
 
-!TestTusLibros methodsFor: 'Cashier' stamp: 'LJ 11/4/2017 23:59:57'!
+!TestTusLibros methodsFor: 'Cashier' stamp: 'LJ 11/5/2017 09:44:34'!
 test11OnCartCheckoutSaleIsStoredInSalesBook
 	cart add: secondBook times: 5. 
-	cashier charge: cart to: creditCard  withUser: creditCard owner.
+	cashier charge: cart to: creditCard owner with: creditCard .
 	self assert: (salesBook size = 1).
 		"When there is a problem with the credit card, there was no comunication"
 	! !
 
 
-!TestTusLibros methodsFor: 'MerchantProcessorInterface' stamp: 'kl 10/30/2017 21:43:48'!
+!TestTusLibros methodsFor: 'MerchantProcessorInterface' stamp: 'LJ 10/30/2017 21:43:48'!
 changeMerchantProcessorClosure: aBlockClosure 
 	merchantProcessorClosure _ aBlockClosure .! !
 
-!TestTusLibros methodsFor: 'MerchantProcessorInterface' stamp: 'kl 11/2/2017 18:25:48'!
+!TestTusLibros methodsFor: 'MerchantProcessorInterface' stamp: 'LJ 11/2/2017 18:25:48'!
 debit: anAmount from: aCreditCard
 	^ merchantProcessorClosure value: anAmount value: aCreditCard.! !
 
-!TestTusLibros methodsFor: 'MerchantProcessorInterface' stamp: 'LJ 11/5/2017 00:00:04'!
+!TestTusLibros methodsFor: 'MerchantProcessorInterface' stamp: 'LJ 11/5/2017 09:44:46'!
 test12CantCheckoutWithStolenCreditCard
 	cart add: secondBook times: 5.
 	
 	self changeMerchantProcessorClosure: [:anAmount :aCreditCard | self error: Cashier stolenCreditCardErrorMessage].
 	
-	self should: [cashier charge: cart to: creditCard  withUser: creditCard owner.] 
+	self should: [cashier charge: cart to: creditCard owner with: creditCard.] 
 		 raise: Error
 		withExceptionDo: [:anError |
 			self assert: (anError messageText) equals: (Cashier stolenCreditCardErrorMessage).
@@ -150,13 +149,13 @@ test12CantCheckoutWithStolenCreditCard
 	
 	! !
 
-!TestTusLibros methodsFor: 'MerchantProcessorInterface' stamp: 'LJ 11/5/2017 00:00:39'!
+!TestTusLibros methodsFor: 'MerchantProcessorInterface' stamp: 'LJ 11/5/2017 09:44:55'!
 test13CantCheckoutWithNoCashCreditCard
 	cart add: secondBook times: 5.
 	
 	self changeMerchantProcessorClosure: [:anAmount :aCreditCard | self error: Cashier noFoundsCreditCardErrorMessage].
 	
-	self should: [cashier charge: cart to: creditCard withUser: creditCard owner] 
+	self should: [cashier charge: cart to: creditCard owner with: creditCard] 
 		 raise: Error
 		withExceptionDo: [:anError |
 			self assert: (anError messageText) equals: (Cashier noFoundsCreditCardErrorMessage).
@@ -166,7 +165,7 @@ test13CantCheckoutWithNoCashCreditCard
 	
 	! !
 
-!TestTusLibros methodsFor: 'MerchantProcessorInterface' stamp: 'LJ 11/5/2017 00:00:44'!
+!TestTusLibros methodsFor: 'MerchantProcessorInterface' stamp: 'LJ 11/5/2017 09:45:07'!
 test14WhenCheckingOutAmounAndCreditCardAreCorrect
 	|usedCreditCard amountInTIcket ticket|
 	cart add: secondBook times: 5.
@@ -176,7 +175,7 @@ test14WhenCheckingOutAmounAndCreditCardAreCorrect
 		amountInTIcket := anAmount.
 	].
 	
-	ticket := cashier charge: cart to: creditCard withUser: creditCard owner.
+	ticket := cashier charge: cart to: creditCard owner with: creditCard.
 	self assert: usedCreditCard equals: (creditCard).
 	self assert: amountInTIcket equals: (ticket total).
 
@@ -199,13 +198,13 @@ advanceTime: aTimeAmount
 invalidCartId
 	^ nil! !
 
-!TestTusLibros methodsFor: 'RestInterface' stamp: 'LJ 11/4/2017 18:18:38'!
+!TestTusLibros methodsFor: 'RestInterface' stamp: 'LJ 11/5/2017 09:54:38'!
 invalidPassword
-	^ 'invalid password'! !
+	^ testObjectFactory invalidPassword.! !
 
-!TestTusLibros methodsFor: 'RestInterface' stamp: 'LJ 11/4/2017 18:16:25'!
+!TestTusLibros methodsFor: 'RestInterface' stamp: 'LJ 11/5/2017 09:54:04'!
 invalidUser
-	^ 'invalid user'! !
+	^ testObjectFactory invalidUser.! !
 
 !TestTusLibros methodsFor: 'RestInterface' stamp: 'LJ 11/4/2017 18:23:35'!
 test15CannotCreateCartWithInvalidUser
@@ -389,17 +388,17 @@ test31CantOperateOnExpiredCart
 	
 	! !
 
-!TestTusLibros methodsFor: 'RestInterface' stamp: 'LJ 11/4/2017 18:31:47'!
+!TestTusLibros methodsFor: 'RestInterface' stamp: 'LJ 11/5/2017 09:55:43'!
 validPassword
-	^ 'valid password'! !
+	^ testObjectFactory validPassword.! !
 
-!TestTusLibros methodsFor: 'RestInterface' stamp: 'LJ 11/4/2017 18:16:17'!
+!TestTusLibros methodsFor: 'RestInterface' stamp: 'LJ 11/5/2017 09:56:11'!
 validUser
-	^ 'valid user'! !
+	^ testObjectFactory validUser.! !
 
-!TestTusLibros methodsFor: 'RestInterface' stamp: 'LJ 11/4/2017 18:19:26'!
+!TestTusLibros methodsFor: 'RestInterface' stamp: 'LJ 11/5/2017 09:56:31'!
 validUsersAndPasswords
-	^ Dictionary newFromPairs: {(self validUser). (self validPassword)}.! !
+	^ testObjectFactory validUsersAndPasswords.! !
 
 
 !classDefinition: #Cart category: #TusLibros!
@@ -409,52 +408,54 @@ Object subclass: #Cart
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!Cart methodsFor: 'as yet unclassified' stamp: 'LJ 11/5/2017 01:20:37'!
+!Cart methodsFor: 'Add products' stamp: 'LJ 11/5/2017 01:20:37'!
 add: aProduct
 	self add: aProduct times: 1.! !
 
-!Cart methodsFor: 'as yet unclassified' stamp: 'LJ 11/5/2017 01:25:40'!
+!Cart methodsFor: 'Add products' stamp: 'LJ 11/5/2017 01:25:40'!
 add: aProduct times: numberOfTimes
 	self assertIsInCatalogue: aProduct.
 	self assertIsPositiveInteger: numberOfTimes .
 	numberOfTimes timesRepeat: [products add: aProduct]! !
 
-!Cart methodsFor: 'as yet unclassified' stamp: 'LJ 11/5/2017 01:22:32'!
-assertIsInCatalogue: aProduct
-	(catalogue includes: aProduct) ifFalse: [self error: Cart productNotInCatalogueErrorMessage] .! !
-
-!Cart methodsFor: 'as yet unclassified' stamp: 'LJ 11/5/2017 01:24:16'!
-assertIsPositiveInteger: aNumber
-	((aNumber > 0) and: (aNumber isInteger)) ifFalse: [self error: Cart numberNotNaturalErrorMessage].! !
-
-!Cart methodsFor: 'as yet unclassified' stamp: 'kl 11/2/2017 20:23:47'!
+!Cart methodsFor: 'Content questions' stamp: 'LJ 11/2/2017 20:23:47'!
 costBasedOn: aValuator
 	^ (products collect: [:aProduct | aValuator value: aProduct]) sum.! !
 
-!Cart methodsFor: 'as yet unclassified' stamp: 'LJ 11/5/2017 01:32:44'!
+!Cart methodsFor: 'Content questions' stamp: 'LJ 10/26/2017 19:46:58'!
+isEmpty
+	^ products isEmpty.! !
+
+!Cart methodsFor: 'Content questions' stamp: 'LJ 10/30/2017 19:09:41'!
+occurrencesOf: aProduct
+	^ products occurrencesOf: aProduct.! !
+
+!Cart methodsFor: 'Content' stamp: 'LJ 11/4/2017 11:32:03'!
+products
+	^ products copy.! !
+
+!Cart methodsFor: 'Content questions' stamp: 'LJ 10/26/2017 21:06:27'!
+size
+	^ products size.! !
+
+!Cart methodsFor: 'Content' stamp: 'LJ 10/30/2017 19:20:04'!
+uniqueProducts	
+	^ products asSet.! !
+
+
+!Cart methodsFor: 'Initialization' stamp: 'LJ 11/5/2017 01:32:44'!
 initializeWithCatalogue: aCatalogue
 	catalogue := aCatalogue.
 	products := Bag new.! !
 
-!Cart methodsFor: 'as yet unclassified' stamp: 'kl 10/26/2017 19:46:58'!
-isEmpty
-	^ products isEmpty.! !
 
-!Cart methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 19:09:41'!
-occurrencesOf: aProduct
-	^ products occurrencesOf: aProduct.! !
+!Cart methodsFor: 'Assertions' stamp: 'LJ 11/5/2017 01:22:32'!
+assertIsInCatalogue: aProduct
+	(catalogue includes: aProduct) ifFalse: [self error: Cart productNotInCatalogueErrorMessage] .! !
 
-!Cart methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 11:32:03'!
-products
-	^ products copy.! !
-
-!Cart methodsFor: 'as yet unclassified' stamp: 'kl 10/26/2017 21:06:27'!
-size
-	^ products size.! !
-
-!Cart methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 19:20:04'!
-uniqueProducts	
-	^ products asSet.! !
+!Cart methodsFor: 'Assertions' stamp: 'LJ 11/5/2017 01:24:16'!
+assertIsPositiveInteger: aNumber
+	((aNumber > 0) and: (aNumber isInteger)) ifFalse: [self error: Cart numberNotNaturalErrorMessage].! !
 
 "-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- "!
 
@@ -466,11 +467,11 @@ Cart class
 numberNotNaturalErrorMessage
 	^ 'Number must be natural'! !
 
-!Cart class methodsFor: 'as yet unclassified' stamp: 'kl 10/26/2017 20:34:59'!
+!Cart class methodsFor: 'as yet unclassified' stamp: 'LJ 10/26/2017 20:34:59'!
 productNotInCatalogueErrorMessage
 	^ 'Product does not exist in catalogue'! !
 
-!Cart class methodsFor: 'as yet unclassified' stamp: 'kl 10/26/2017 20:01:39'!
+!Cart class methodsFor: 'as yet unclassified' stamp: 'LJ 10/26/2017 20:01:39'!
 withCatalogue: aCatalogue
 	^ self new initializeWithCatalogue: aCatalogue.! !
 
@@ -489,10 +490,6 @@ assertNotExpired
 !CartSession methodsFor: 'as yet unclassified' stamp: 'LJ 11/5/2017 00:29:53'!
 hasExpired
 	^ lastOperationTime + sessionDuration <= timer now.! !
-
-!CartSession methodsFor: 'as yet unclassified' stamp: 'LJ 11/5/2017 00:05:24'!
-user
-	^ user! !
 
 !CartSession methodsFor: 'as yet unclassified' stamp: 'LJ 11/5/2017 00:03:58'!
 with: aCart sessionDuration: aTime withTimer: aTimer withUser: aUser
@@ -531,8 +528,8 @@ Object subclass: #Cashier
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!Cashier methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 23:58:42'!
-charge: aCart to: aCreditCard withUser: aUser
+!Cashier methodsFor: 'Charging' stamp: 'LJ 11/5/2017 09:42:42'!
+charge: aCart to: aUser with: aCreditCard
 	| ticket total|
 	aCart isEmpty ifTrue: [self error: Cashier emptyCartErrorMessage].
 	(aCreditCard isExpiredOn: GregorianMonthOfYear current) ifTrue: [self error: Cashier expiratedCreditCardErrorMessage.].
@@ -542,20 +539,16 @@ charge: aCart to: aCreditCard withUser: aUser
 	salesBook add: (Sale with: (ticket copy) for: aUser).
 	^ ticket.! !
 
-!Cashier methodsFor: 'as yet unclassified' stamp: 'kl 11/2/2017 20:21:08'!
+!Cashier methodsFor: 'Charging' stamp: 'LJ 11/2/2017 20:21:08'!
 debit: aTotal from: aCreditCard
   merchantProcessor debit: aTotal from: aCreditCard.
 ! !
 
-!Cashier methodsFor: 'as yet unclassified' stamp: 'kl 11/2/2017 20:25:26'!
+!Cashier methodsFor: 'Charging' stamp: 'LJ 11/2/2017 20:25:26'!
 makeTicketFor: aCart 
 	^ Ticket with: ( (aCart uniqueProducts collect: [:aProduct | TicketItem for: aProduct withPrice: (valuator value: aProduct) withAmount: (aCart occurrencesOf: aProduct)])).! !
 
-!Cashier methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 19:10:48'!
-salesBook
-	^ salesBook! !
-
-!Cashier methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 21:40:45'!
+!Cashier methodsFor: 'Initialization' stamp: 'LJ 10/30/2017 21:40:45'!
 with: aValuator on: aSalesBook withMerchantProcessor: aMerchantProcessor
 	valuator := aValuator.
 	salesBook _ aSalesBook.
@@ -575,15 +568,15 @@ emptyCartErrorMessage
 expiratedCreditCardErrorMessage
 	^ 'Credit card must not be expired'.! !
 
-!Cashier class methodsFor: 'error handling' stamp: 'kl 11/2/2017 18:32:03'!
+!Cashier class methodsFor: 'error handling' stamp: 'LJ 11/2/2017 18:32:03'!
 noFoundsCreditCardErrorMessage
 	^ 'Credit Card with no founds'! !
 
-!Cashier class methodsFor: 'error handling' stamp: 'kl 11/2/2017 18:31:01'!
+!Cashier class methodsFor: 'error handling' stamp: 'LJ 11/2/2017 18:31:01'!
 stolenCreditCardErrorMessage
 	^ 'Stolen credit card'.! !
 
-!Cashier class methodsFor: 'error handling' stamp: 'kl 10/30/2017 21:40:25'!
+!Cashier class methodsFor: 'error handling' stamp: 'LJ 10/30/2017 21:40:25'!
 with: aValuator on: aSalesBook withMerchantProcessor: aMerchantProcessor
 	^ self new with: aValuator on: aSalesBook withMerchantProcessor: aMerchantProcessor.! !
 
@@ -595,19 +588,17 @@ Object subclass: #CreditCard
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!CreditCard methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 21:43:22'!
-for: aPerson withNumber: aNumber andExpirationDate: anExpirationDate 
-"	(aPerson trim) length = 0 ifTrue: [self error: 'Person name cannot be empty'].
-	"
+!CreditCard methodsFor: 'Initialization' stamp: 'LJ 11/5/2017 09:46:15'!
+for: aPerson withNumber: aNumber andExpirationDate: anExpirationDate
 	person := aPerson.
 	number := aNumber.
 	expirationDate := anExpirationDate.! !
 
-!CreditCard methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 18:35:49'!
+!CreditCard methodsFor: 'Accessing' stamp: 'LJ 10/30/2017 18:35:49'!
 isExpiredOn: aDate
 	^ expirationDate < aDate.! !
 
-!CreditCard methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 13:16:39'!
+!CreditCard methodsFor: 'Accessing' stamp: 'LJ 11/4/2017 13:16:39'!
 owner
 	^ person.! !
 
@@ -629,15 +620,15 @@ Object subclass: #ManualTimer
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!ManualTimer methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 23:06:08'!
+!ManualTimer methodsFor: 'Time' stamp: 'LJ 11/4/2017 23:06:08'!
 advanceTime: aTimeAmount
 	now _ now + aTimeAmount ! !
 
-!ManualTimer methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 23:04:55'!
+!ManualTimer methodsFor: 'Initialization' stamp: 'LJ 11/4/2017 23:04:55'!
 initialize
 	now _ 0 seconds.! !
 
-!ManualTimer methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 23:09:50'!
+!ManualTimer methodsFor: 'Time' stamp: 'LJ 11/4/2017 23:09:50'!
 now
 	^ now! !
 
@@ -654,15 +645,11 @@ amountPurchasedOf: aProduct
 	^ purchased at: aProduct.
 ! !
 
-!Purchases methodsFor: 'as yet unclassified' stamp: 'LJ 11/5/2017 00:48:26'!
-productsPurchased
-	^ purchased keys.! !
-
 !Purchases methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 19:58:55'!
 total
 	^ total.! !
 
-!Purchases methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 20:01:06'!
+!Purchases methodsFor: 'Initialization' stamp: 'LJ 11/4/2017 20:01:06'!
 with: aPurchasesDictionary totaling: aTotal
 	purchased _ aPurchasesDictionary .
 	total _ aTotal .! !
@@ -673,7 +660,7 @@ with: aPurchasesDictionary totaling: aTotal
 Purchases class
 	instanceVariableNames: ''!
 
-!Purchases class methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 19:54:46'!
+!Purchases class methodsFor: 'Class Initialization' stamp: 'LJ 11/4/2017 19:54:46'!
 with: aPurchasesDictionary totaling: aTotal
 	^ self new with: aPurchasesDictionary totaling: aTotal
 ! !
@@ -686,27 +673,23 @@ Object subclass: #RestInterface
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!RestInterface methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 19:36:47'!
+!RestInterface methodsFor: 'Purchases listing' stamp: 'LJ 11/4/2017 19:36:47'!
 addSale: aSale to: salesByProduct
 	aSale productsSoldDo: [:aProduct :anAmount | 
 		salesByProduct at: aProduct put: ((salesByProduct at: aProduct ifAbsent: 0) + anAmount).
 	].! !
 
-!RestInterface methodsFor: 'as yet unclassified' stamp: 'LJ 11/5/2017 00:09:13'!
+!RestInterface methodsFor: 'Adding Products' stamp: 'LJ 11/5/2017 00:09:13'!
 addToCart: aCartId aProduct: aProduct times: aNumberOfTimes 
 	self withCart: aCartId do: [:aCart :aUser | aCart add: aProduct times: aNumberOfTimes ].
 ! !
 
-!RestInterface methodsFor: 'as yet unclassified' stamp: 'LJ 11/5/2017 00:23:40'!
-cartSessionExpiredErrorMessage
-	^ ''.! !
-
-!RestInterface methodsFor: 'as yet unclassified' stamp: 'LJ 11/5/2017 00:07:23'!
+!RestInterface methodsFor: 'Checkout' stamp: 'LJ 11/5/2017 09:43:10'!
 checkout: aCartId withCreditCard: aCreditCard
-	self withCart: aCartId do: [:aCart :aUser| cashier charge: aCart to: aCreditCard withUser: aUser].
+	self withCart: aCartId do: [:aCart :aUser| cashier charge: aCart to: aUser with: aCreditCard].
 ! !
 
-!RestInterface methodsFor: 'as yet unclassified' stamp: 'LJ 11/5/2017 00:05:05'!
+!RestInterface methodsFor: 'Cart creation' stamp: 'LJ 11/5/2017 00:05:05'!
 createCartFor: aUser withPassword: aPassword
 	| aCartId aCart|
 	self verifyUser: aUser withPassword: aPassword.
@@ -715,12 +698,12 @@ createCartFor: aUser withPassword: aPassword
 	cartSessions at: (aCartId) put: (CartSession with: aCart sessionDuration: (self sessionDuration) withTimer: timer withUser: aUser).
 	^ aCartId.! !
 
-!RestInterface methodsFor: 'as yet unclassified' stamp: 'LJ 11/5/2017 00:08:57'!
+!RestInterface methodsFor: 'Cart listing' stamp: 'LJ 11/5/2017 00:08:57'!
 listCartWithId: aCartId 
 	^ self withCart: aCartId  do: [:aCart :aUser | aCart products]
 	! !
 
-!RestInterface methodsFor: 'as yet unclassified' stamp: 'LJ 11/5/2017 00:42:00'!
+!RestInterface methodsFor: 'Purchases listing' stamp: 'LJ 11/5/2017 00:42:00'!
 listPurchasesFor: aUser withPassword: aPassword
 	|total purchases|
 	self verifyUser: aUser withPassword: aPassword.
@@ -738,32 +721,32 @@ listPurchasesFor: aUser withPassword: aPassword
 			
 	^ Purchases with: purchases totaling: total.		! !
 
-!RestInterface methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 11:25:25'!
+!RestInterface methodsFor: 'Cart creation' stamp: 'LJ 11/4/2017 11:25:25'!
 newCartId
 	^ LaggedFibonacciRandom new next.! !
 
-!RestInterface methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 19:43:12'!
+!RestInterface methodsFor: 'Purchases listing' stamp: 'LJ 11/4/2017 19:43:12'!
 salesByUser: aUser
 	^ salesBook select: [:aSale | aSale soldTo: aUser]
 	! !
 
-!RestInterface methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 22:36:25'!
+!RestInterface methodsFor: 'Session' stamp: 'LJ 11/4/2017 22:36:25'!
 sessionDuration
 	^ 30 minutes.! !
 
-!RestInterface methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 11:04:49'!
+!RestInterface methodsFor: 'User verification' stamp: 'LJ 11/4/2017 11:04:49'!
 verifyUser: aUser withPassword: aPassword
 	users at: aUser ifAbsent: [ self error: RestInterface invalidUserErrorMessage ].
 	aPassword = (users at: aUser) ifFalse: [ self error: RestInterface invalidUserErrorMessage ].! !
 
-!RestInterface methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 22:51:36'!
+!RestInterface methodsFor: 'Cart accessing' stamp: 'LJ 11/4/2017 22:51:36'!
 withCart: aCartId do: aBlock
 	|cartSession|
 	cartSession _ cartSessions at: aCartId ifAbsent: [self error: RestInterface invalidCartIdErrorMessage].
 	^ cartSession withCartDo: aBlock.! !
 
 
-!RestInterface methodsFor: 'initialization' stamp: 'LJ 11/4/2017 22:37:18'!
+!RestInterface methodsFor: 'Initialization' stamp: 'LJ 11/4/2017 22:37:18'!
 withUsers: validUsers withMerchantProcessor: aMerchantProcessor withSalesBook: aSalesBook withCatalogue: aCatalogue withPriceValuator: aPriceValuator withTimer: aTimer
 	users _ validUsers.
 	cartSessions _ Dictionary new.
@@ -784,7 +767,7 @@ cartExpiredErrorMessage
 
 !RestInterface class methodsFor: 'Error messages' stamp: 'LJ 11/4/2017 21:00:44'!
 cartSessionExpiredErrorMessage
-	^ 'Cart session expired'! !
+	^ 'Expired cart session. More than 30 minutes passed after last use.'! !
 
 !RestInterface class methodsFor: 'Error messages' stamp: 'LJ 11/4/2017 12:17:56'!
 emptyCartErrorMessage
@@ -854,49 +837,69 @@ Object subclass: #TestObjectFactory
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!TestObjectFactory methodsFor: 'as yet unclassified'!
+!TestObjectFactory methodsFor: 'Books'!
 anotherBookFromEditorial
 	^ 'another book'.! !
 
-!TestObjectFactory methodsFor: 'as yet unclassified'!
+!TestObjectFactory methodsFor: 'Books'!
 bookFromEditorial
 	^ 'a book'.! !
 
-!TestObjectFactory methodsFor: 'as yet unclassified'!
+!TestObjectFactory methodsFor: 'Books'!
 bookNotFromEditorial
 	^ 'invalid Book'.! !
 
-!TestObjectFactory methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 18:10:06'!
+!TestObjectFactory methodsFor: 'Catalogue' stamp: 'LJ 11/4/2017 18:10:06'!
 catalogue
 	^ (Set
 		with: self bookFromEditorial
 		with: self anotherBookFromEditorial).! !
 
-!TestObjectFactory methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 18:15:05'!
+!TestObjectFactory methodsFor: 'Credit card' stamp: 'LJ 11/4/2017 18:15:05'!
 expiredCreditCardFor: aPerson
 	^ CreditCard
 		for: aPerson
 		withNumber: 1
 		andExpirationDate: currentMonthYear previous.! !
 
-!TestObjectFactory methodsFor: 'as yet unclassified'!
+!TestObjectFactory methodsFor: 'Initialization'!
 initialize
 	currentMonthYear _ GregorianMonthOfYear current.! !
 
-!TestObjectFactory methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 18:15:09'!
+!TestObjectFactory methodsFor: 'Users' stamp: 'LJ 11/5/2017 09:54:45'!
+invalidPassword
+	^ 'invalid password'! !
+
+!TestObjectFactory methodsFor: 'Users' stamp: 'LJ 11/5/2017 09:54:21'!
+invalidUser
+	^ 'invalid user'.! !
+
+!TestObjectFactory methodsFor: 'Credit card' stamp: 'LJ 11/4/2017 18:15:09'!
 notExpiredCreditCardFor: aPerson
 	^ CreditCard
 		for: aPerson
 		withNumber: 1
 		andExpirationDate: currentMonthYear next next.! !
 
-!TestObjectFactory methodsFor: 'as yet unclassified'!
+!TestObjectFactory methodsFor: 'Books'!
 priceBook
 	^ Dictionary newFromPairs: {self bookFromEditorial. 10. self anotherBookFromEditorial. 5}.! !
 
-!TestObjectFactory methodsFor: 'as yet unclassified'!
+!TestObjectFactory methodsFor: 'Salesbook'!
 salesBook
 	^ OrderedCollection new.! !
+
+!TestObjectFactory methodsFor: 'Users' stamp: 'LJ 11/5/2017 09:55:49'!
+validPassword
+	^ 'valid password'! !
+
+!TestObjectFactory methodsFor: 'Users' stamp: 'LJ 11/5/2017 09:56:15'!
+validUser
+	^ 'valid user'! !
+
+!TestObjectFactory methodsFor: 'Users' stamp: 'LJ 11/5/2017 09:56:36'!
+validUsersAndPasswords
+	^ Dictionary newFromPairs: {(self validUser). (self validPassword)}.! !
 
 
 !classDefinition: #Ticket category: #TusLibros!
@@ -906,7 +909,7 @@ Object subclass: #Ticket
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!Ticket methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 19:12:44'!
+!Ticket methodsFor: 'as yet unclassified' stamp: 'LJ 10/30/2017 19:12:44'!
 initializeWith:	aListOfTicketItems
 	items := aListOfTicketItems.! !
 
@@ -924,7 +927,7 @@ total
 Ticket class
 	instanceVariableNames: ''!
 
-!Ticket class methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 19:13:07'!
+!Ticket class methodsFor: 'as yet unclassified' stamp: 'LJ 10/30/2017 19:13:07'!
 with: aListOfTicketItems
 	^ self new initializeWith: aListOfTicketItems.! !
 
@@ -936,11 +939,11 @@ Object subclass: #TicketItem
 	poolDictionaries: ''
 	category: 'TusLibros'!
 
-!TicketItem methodsFor: 'as yet unclassified' stamp: 'LJ 11/4/2017 19:29:20'!
+!TicketItem methodsFor: 'as yet unclassified' stamp: 'LJ 11/5/2017 09:52:26'!
 amount
 	^ amount! !
 
-!TicketItem methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 19:17:08'!
+!TicketItem methodsFor: 'as yet unclassified' stamp: 'LJ 10/30/2017 19:17:08'!
 for: aProduct withPrice: aPrice withAmount: anAmount
 	product := aProduct.
 	price := aPrice.
@@ -951,7 +954,7 @@ for: aProduct withPrice: aPrice withAmount: anAmount
 product
 	^ product! !
 
-!TicketItem methodsFor: 'as yet unclassified' stamp: 'kl 10/30/2017 19:14:59'!
+!TicketItem methodsFor: 'as yet unclassified' stamp: 'LJ 10/30/2017 19:14:59'!
 summarizedAmount
 	^ amount * price.! !
 
